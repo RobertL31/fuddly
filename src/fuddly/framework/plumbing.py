@@ -935,35 +935,40 @@ class FmkPlumbing(object):
         projects = collections.OrderedDict()
 
         def populate_projects(search_path, prefix=""):
-            prj_dir = os.path.basename(os.path.normpath(search_path))
-            (path, dirs, files) = next(os.walk(search_path))
-            if "__init__.py" in files:
-                # Normapath remove the / that will most likely be at the end of prefix
-                projects[os.path.normpath(prefix)] = [os.path.basename(search_path)]
-                return
-
-            for d in [x for x in dirs if x != "__pycache__"]:
-                # Done recursively manually even though walk does go down a depth of one folder
-                # but only one folder, so it would be nicer to do it ourselves
-                populate_projects(
-                    os.path.join(search_path, d),
-                    os.path.join(prefix, prj_dir) + os.sep
-                )
-
-            files = list(
-                    map(
-                        lambda x: x.removesuffix(".py"),
-                        filter(lambda x: x.endswith(".py"), files)
+            search_path=os.path.normpath(search_path)
+            for (path, dirs, files) in os.walk(search_path):
+                rel_path=path.removeprefix(search_path).removeprefix(os.sep)
+                if "__init__.py" in files:
+                    # normapth make sure the path does not end in a '/'
+                    key=os.path.normpath(os.path.join(prefix, os.path.dirname(rel_path)))
+                    basename=os.path.basename(path.removeprefix(search_path).removeprefix(os.sep))
+                    if basename != "":
+                        if projects.get(key) is None:
+                            projects[key] = []
+                        projects[key].append(basename)
+                        dirs.clear()
+                        continue
+                if "__pycache__" in dirs:
+                    dirs.remove("__pycache__")
+                # Take all python files except for __init__.py and remove the .py suffix
+                files = list(
+                        map(lambda x: x.removesuffix(".py"),
+                            filter(lambda x: x.endswith(".py"), 
+                               filter(lambda x: x != "__init__.py", files)
+                            )
+                        )
                     )
-                )
-            if len(files) != 0:
-                projects[prefix+prj_dir] = files
+                if len(files) != 0:
+                    key=os.path.normpath(os.path.join(prefix, rel_path))
+                    if projects.get(key) is None:
+                        projects[key] = []
+                    projects[key].extend(files)
 
         if gr.is_running_from_fs:
             if not self._quiet:
                 self.print(colorize("*** Running directly from sources, loading internal projects ***", rgb=Color.WARNING))
-            populate_projects(gr.projects_folder, prefix="fuddly/")
-        populate_projects(gr.user_projects_folder)
+            populate_projects(gr.projects_folder, prefix="fuddly/projects")
+        populate_projects(gr.user_projects_folder, prefix="user_projects")
 
         for dname, file_list in projects.items():
             if not self._quiet:
