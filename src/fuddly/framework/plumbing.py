@@ -936,7 +936,7 @@ class FmkPlumbing(object):
 
         def populate_projects(search_path, prefix=""):
             search_path=os.path.normpath(search_path)
-            for (path, dirs, files) in os.walk(search_path):
+            for (path, dirs, files) in os.walk(search_path, followlinks=True):
                 rel_path=path.removeprefix(search_path).removeprefix(os.sep)
                 if "__init__.py" in files:
                     # normapth make sure the path does not end in a '/'
