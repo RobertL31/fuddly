@@ -1,3 +1,3 @@
-# {{name}}
+# ${name}
 
-Here you can add some more info about your {{target}}
+Here you can add some more info about your ${object_name}

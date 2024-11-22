@@ -62,18 +62,18 @@ a *-h* and *--help* options to describe their use from the command line
 
 ## NEW
 
-*fuddly* new [OPTIONS] target name
+*fuddly* new [OPTIONS] object name
 
-	*target*
+	*object*
 		Type of object to create. [dm, data-model, project:<template>]
-		The "project" target shoudl be followed by ":<template>" where
+		The "project" object should be followed by ":<template>" where
 		"<template>" is the name of the project template to use.
 
 		There are for now, 2 project template:
-			- skeleton
+			- bare
 			- exemple
 
-		The "skeleton" template creates a barebones project with only the
+		The "bare" template creates a barebones project with only the
 		structure and a few lines of code so you can get on with your work.
 
 		The "exemple" template is more complete, and more or less creates the
@@ -81,23 +81,22 @@ a *-h* and *--help* options to describe their use from the command line
 		where to put what.
 
 	*name*
-		Name to give the created target. This should conform to python's module
+		Name to give the created object. This should conform to python's module
 		naming convention.
 
-	*--pyproject*
-		If this option is given, the target will be create in a python project
-		structure. A README.md and pyproject.toml file will be added and
-		partially filled. And the target will be place in the "src/"
-		directory.
-
 	*--dest* PATH  
-		Directory to create the target in.
+		Directory to create the object in.
 
-		If *--pyproject* was used, the default value when omitted will be the current 
-		working directory. If not, it will be the appropriate folder in the fuddly data_folder
-		This can be either "~/.local/share/fuddly/{data_models, user_projects}" or
-		"~/.fuddly/{user_data_models, user_projects}"
-		depending on your system setup.
+		if PATH is ommited, a default value will be used.
+		If *--pyproject* was used, the default PATH will be the current working directory. 
+		If not, it will be the appropriate folder in the fuddly data_folder. This can be 
+		either "~/.local/share/fuddly/{user_data_models, user_projects}" or 
+		"~/fuddly_data/{user_data_models, user_projects}" depending on your system setup.
+
+	*--pyproject*
+		If this option is given, the object will be created in a python project
+		structure. A README.md and pyproject.toml file will be added and
+		partially filled. The object will be placed in the "src/" directory.
 
 ## TOOL
 

@@ -56,46 +56,46 @@ def main(argv: List[str] = None):
     parsers = {}
     arg_parser = parsers["main"] = argparse.ArgumentParser(
             prog="fuddly", 
-            description="The fuddly cli interface",
-            epilog="Use fuddly <action> help more information on their arguments",
+            description="the fuddly cli interface",
+            epilog="use 'fuddly <action>' help more information on their arguments",
             exit_on_error=False
         )
     subparsers = arg_parser.add_subparsers(help="", dest="action", metavar="action")
 
-    with subparsers.add_parser("shell", help="Launch the fuddly interactive shell") as p:
+    with subparsers.add_parser("shell", help="launch the fuddly interactive shell") as p:
         parsers["shell"] = p
         group = p.add_argument_group("Miscellaneous Options")
         group.add_argument(
             "-f",
             "--fmkdb",
             metavar="PATH",
-            help="Path to an alternative fmkDB.db. Create " "it if it does not exist.",
+            help="path to an alternative fmkDB.db. Create " "it if it does not exist.",
         )
         group.add_argument(
             "--external-display",
             action="store_true",
-            help="Display information on another terminal.",
+            help="display information on another terminal.",
         )
         group.add_argument(
             "--quiet",
             action="store_true",
-            help="Limit the information displayed at startup.",
+            help="limit the information displayed at startup.",
         )
 
-    with subparsers.add_parser("run", help="Run a fuddly project script") as p:
+    with subparsers.add_parser("run", help="run a fuddly project script") as p:
         # XXX Should you be able to run script from outside the script dir(s?) ?
         parsers["run"] = p
 
         p.add_argument(
             "--ipython",
             action="store_true",
-            help="Tun the script using ipython",
+            help="tun the script using ipython",
         )
 
         p.add_argument(
             "script",
             metavar="script",
-            help="Name of the script to launch, the special value \"list\" list available scripts",
+            help="name of the script to launch, the special value \"list\" list available scripts",
             choices=["list", *get_scripts()],
         )
 
@@ -103,10 +103,10 @@ def main(argv: List[str] = None):
         p.add_argument(
             "args",
             nargs=argparse.REMAINDER,
-            help="Arguments to pass through to the script",
+            help="arguments to pass through to the script",
         ).completer = script_argument_completer
 
-    with subparsers.add_parser("new", help="Create a new project or data model") as p:
+    with subparsers.add_parser("new", help="create a new project or data model") as p:
         parsers["new"] = p
         p.add_argument(
             "--dest",
@@ -115,50 +115,50 @@ def main(argv: List[str] = None):
                 dash_ok=False,
                 type="dir"
             ),
-            help="directory to create the target in.",
+            help="directory to create the object in.",
         )
         p.add_argument(
             "--pyproject",
             action="store_true",
-            help="Create a python package project structure"
+            help="create a python package project structure"
         )
         p.add_argument(
-            "target", 
-            choices=["dm", "data-model", "project:skeleton", "project:exemple" ], 
-            metavar = "target",
-            help="Type of object to create. [dm, data-model, project]",
+            "object", 
+            choices=["dm", "data-model", "project:bare", "project:exemple" ], 
+            metavar = "object",
+            help="type of object to create. [dm, data-model, project]",
         )
         p.add_argument(
             "name",
-            help="Name to give the create target.",
+            help="name to give the create object.",
         )
 
-    with subparsers.add_parser("tool", help="Execute a fuddly tool") as p:
+    with subparsers.add_parser("tool", help="execute a fuddly tool") as p:
         parsers["tool"] = p
         p.add_argument(
             "tool",
             metavar="tool",
-            help="Name of the tool to launch, the special value \"list\" list available tools",
+            help="name of the tool to launch, the special value \"list\" list available tools",
             choices=["list", *get_tools()],
         )
         p.add_argument(
             "args",
             nargs=argparse.REMAINDER,
-            help="Arguments to passthrough to the tool",
+            help="arguments to passthrough to the tool",
         ).completer = tool_argument_completer
 
-    with subparsers.add_parser("workspace", help="Manage fuddly's workspace") as p:
+    with subparsers.add_parser("workspace", help="manage fuddly's workspace") as p:
         parsers["workspace"] = p
         group = p.add_mutually_exclusive_group()
         group.add_argument(
             "--show",
             action="store_true",
-            help="Print the path to the workspace",
+            help="print the path to the workspace",
         )
         group.add_argument(
             "--clean",
             action="store_true",
-            help="Remove everything from the workspace",
+            help="remove everything from the workspace",
         )
 
     # Needed because we set exit_on_error=False in the constructor
