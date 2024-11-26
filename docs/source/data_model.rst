@@ -838,8 +838,13 @@ All string types listed below provide the same interface
 following parameters:
 
 ``values`` [optional, default value: **None**]
-  List of the character strings that are considered valid for the node
-  backed by this *String object*. The default string is the first element of the list.
+  Exhaustive list of character strings that are valid for the node
+  backed by this *String object*. The first item of the list is the default value,
+  except if the parameter `default` is provided.
+
+``samples`` [optional, default value: **None**]
+  Examples of character strings that are valid for the node
+  backed by this *String object*.
 
 ``size`` [optional, default value: **None**]
   Valid character string size for the node backed by this *String

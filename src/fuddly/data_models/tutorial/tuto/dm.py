@@ -784,7 +784,7 @@ class MyDF_DataModel(DataModel):
              ],
              'constraints_highlight': True,
              'contents': [
-                 {'name': 'prefix', 'contents': String(values=['('], alphabet='(<'), #String(values=['(', '<']),
+                 {'name': 'prefix', 'contents': String(samples=['('], alphabet='(<'), #String(values=['(', '<']),
                   'default': '<'},
                  {'name': 'idx', 'contents': INT_str(values=[1,2,3,100,4,5,6,7,8,100]),
                   'default': 6},
@@ -798,9 +798,9 @@ class MyDF_DataModel(DataModel):
              'contents': [
                  # {'name': 'str1', 'contents': String(values=['a', 'b', 'c'])},
                  # {'name': 'str2',
-                 #  'contents': String(values=['x', 'y'], alphabet='xy', min_sz=1, max_sz=3)},
+                 #  'contents': String(samples=['x', 'y'], alphabet='xy', min_sz=1, max_sz=3)},
                  {'name': 'str3',
-                  'contents': String(values=['OK'], alphabet=String.non_ctrl_char+String.ctrl_char_set,
+                  'contents': String(samples=['OK'], alphabet=String.non_ctrl_char+String.ctrl_char_set,
                                      min_sz=1, max_sz=3)},
                  {'name': 'idx', 'contents': INT_str(values=[1,2,3,4,5])},
              ]}

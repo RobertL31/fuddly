@@ -318,6 +318,7 @@ class String(VT_Alt):
     def __init__(
         self,
         values=None,
+        samples=None,
         size=None,
         min_sz=None,
         max_sz=None,
@@ -338,8 +339,11 @@ class String(VT_Alt):
         Initialize the String
 
         Args:
-            values: List of the character strings that are considered valid for the node
-              backed by this *String object*. The first item of the list is the default value
+            values: Exhaustive list of character strings that are valid for the node
+              backed by this *String object*. The first item of the list is the default value,
+              except if the parameter `default` is provided.
+            samples: Examples of character strings that are valid for the node
+              backed by this *String object*.
             size: Valid character string size for the node backed by this *String object*.
             min_sz: Minimum valid size for the character strings for the node backed by
               this *String object*. If not set, this parameter will be
@@ -368,8 +372,8 @@ class String(VT_Alt):
             absorb_regexp (str): You can specify a regular expression in this parameter as a
               supplementary constraint for data absorption operation.
             alphabet: The alphabet to use for generating data, in case no ``values`` is
-              provided. Also use during absorption to validate the contents. It is
-              checked if there is no ``values``.
+              provided, or only ``samples``. Also used during absorption to validate the contents.
+              It is checked if there is no ``values``.
             values_desc (dict): Dictionary that maps string values to their descriptions (character
               strings). Leveraged for display purpose. Even if provided, all values do not need to
               be described.
@@ -398,9 +402,13 @@ class String(VT_Alt):
             raise ValueError("@values_desc should be a dictionary")
 
         self.is_values_provided = None
+        self.is_samples_provided = None
 
         self.min_sz = None
         self.max_sz = None
+
+        if values and samples:
+            raise DataModelDefinitionError('Either @values or @samples can be provided, not both.')
 
         if self._encoder_cls is not None:
             self.encoded_string = True
@@ -409,6 +417,7 @@ class String(VT_Alt):
 
         self.set_description(
             values=values,
+            samples=samples,
             size=size,
             min_sz=min_sz,
             max_sz=max_sz,
@@ -433,7 +442,10 @@ class String(VT_Alt):
             self.init_encoder()
 
         if forget_current_state:
-            self.values = copy.copy(self.values) if self.is_values_provided else None
+            if self.is_values_provided or self.is_samples_provided:
+                self.values = copy.copy(self.values)
+            else:
+                self.values = None
             self.reset_state()
         else:
             self.values = copy.copy(self.values)
@@ -459,7 +471,7 @@ class String(VT_Alt):
         blob_dec = self.decode(blob)
         if (
             constraints[AbsCsts.Contents]
-            and self.is_values_provided
+            and (self.is_values_provided or self.is_samples_provided)
             and self.alphabet is None
         ):
             for v in self.values:
@@ -628,7 +640,7 @@ class String(VT_Alt):
         return val, val_sz
 
     def _check_contents(self, val, val_sz, constraints):
-        if self.is_values_provided:
+        if self.is_values_provided or self.is_samples_provided:
             if constraints[AbsCsts.Contents]:
                 value_list = self.values
                 compared_val = val
@@ -644,7 +656,7 @@ class String(VT_Alt):
                     val = val[:val_sz]
                     break
             else:
-                if self.alphabet is not None:
+                if self.alphabet is not None and not self.is_values_provided:
                     val, val_sz = self._check_alphabet(val, constraints)
                 else:
                     raise ValueError("contents not valid!")
@@ -696,7 +708,7 @@ class String(VT_Alt):
 
     def reset_state(self):
         if self.values is None:
-            assert not self.is_values_provided
+            assert not self.is_values_provided and not self.is_samples_provided
             self._populate_values(enforce_max_enc_sz=self.max_enc_sz_provided,
                                   enforce_min_enc_sz=self.min_enc_sz_provided)
             self._ensure_enc_sizes_consistency()
@@ -730,6 +742,7 @@ class String(VT_Alt):
     def set_description(
         self,
         values=None,
+        samples=None,
         size=None,
         min_sz=None,
         max_sz=None,
@@ -779,13 +792,18 @@ class String(VT_Alt):
 
             # distinguish cases where values is provided or created based on size
             self.is_values_provided = True
-            self.user_provided_list = copy.copy(self.values)
+            self.is_samples_provided = False
 
             self.values = self._str2bytes(values)
 
+        elif samples is not None:
+            self.is_values_provided = False
+            self.is_samples_provided = True
+            self.values = self._str2bytes(samples)
+
         else:
             self.is_values_provided = False
-            self.user_provided_list = None
+            self.is_samples_provided = False
             self.values = None
 
         if size is not None:
@@ -831,7 +849,10 @@ class String(VT_Alt):
                                 f"The value '{val}' does not conform to the alphabet!"
                             )
 
-            if self.alphabet is not None:
+            if self.alphabet is not None and self.is_samples_provided:
+                # In this case, @samples have been provided but not the
+                # parameter @values (exhaustive cases). Thus, we add more samples based on
+                # the parameter @alphabet.
                 self._append_representative_values(enforce_max_enc_sz=self.max_enc_sz_provided,
                                                    enforce_min_enc_sz=self.min_enc_sz_provided)
 
@@ -1171,6 +1192,8 @@ class String(VT_Alt):
         if self.max_sz < sz or self.min_sz > sz:
             return False
         if self.is_values_provided:
+            return val in self.values
+        elif self.is_samples_provided:
             in_samples = val in self.values
             if in_samples:
                 return True

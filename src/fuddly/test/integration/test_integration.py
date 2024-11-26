@@ -3623,7 +3623,7 @@ class TestNode_TypedValue(unittest.TestCase):
         self.assertNotEqual(str2, 'BABA')
 
         node = Node('test',
-                    vt=String(values=['ABC', 'GAG'], min_sz=2, max_sz=100, alphabet='ABCDEFGH',
+                    vt=String(samples=['ABC', 'GAG'], min_sz=2, max_sz=100, alphabet='ABCDEFGH',
                               default='CAFE'))
         node.set_env(Env())
 
