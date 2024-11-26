@@ -12,7 +12,6 @@ python-constraint>=1.4.0
 z3-solver>=4.8
 pyxdg
 xtermcolor
-jsonschema
 sphinx
 sphinxcontrib-napoleon
 sphinx-rtd-theme

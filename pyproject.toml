@@ -30,7 +30,7 @@ fuddly = "fuddly.cli:main"
 # Data models and Projects
 [project.entry-points."fuddly.data_models"]
 jpg = "fuddly.data_models.file_formats.jpg"
-json_dm = "fuddly.data_models.file_formats.json_dm"
+json = "fuddly.data_models.file_formats.json"
 pdf = "fuddly.data_models.file_formats.pdf"
 png = "fuddly.data_models.file_formats.png"
 zip = "fuddly.data_models.file_formats.zip"
