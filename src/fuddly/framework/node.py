@@ -5240,11 +5240,7 @@ class NodeInternals_NonTerm(NodeInternals):
 
             first_pass = True
             if postponed_node_desc is not None or pending_upper_postpone is not None:
-                postponed = (
-                    postponed_node_desc
-                    if postponed_node_desc is not None
-                    else pending_upper_postpone
-                )
+                postponed = postponed_node_desc if postponed_node_desc is not None else pending_upper_postpone
             else:
                 postponed = None
 
@@ -5270,10 +5266,7 @@ class NodeInternals_NonTerm(NodeInternals):
                 if st == AbsorbStatus.Reject:
                     nb_absorbed = node_no - 1
                     if DEBUG:
-                        print(
-                            "\nREJECT: %s, size: %d, blob: %r ..."
-                            % (node.name, len(blob), blob[:4])
-                        )
+                        print("\nREJECT: %s, size: %d, blob: %r ..." % (node.name, len(blob), blob[:4]))
                     if min_node == 0:
                         # if DEBUG:
                         #     print(' --> min node == 0 (No abort)')
@@ -5287,13 +5280,10 @@ class NodeInternals_NonTerm(NodeInternals):
                         break
                 elif st == AbsorbStatus.Absorbed or st == AbsorbStatus.FullyAbsorbed:
                     if DEBUG:
-                        print(
-                            "\nABSORBED: %s, abort: %r, off: %d, consumed_sz: %d, blob: %r..."
-                            % (node.name, abort, off, sz, blob[off : off + sz][:100])
-                        )
-                        print(
-                            f'\nPostpone Node: {postponed.name if postponed else "N/A"} ({postponed!r})'
-                        )
+                        print("\nABSORBED: %s, abort: %r, off: %d, consumed_sz: %d, blob: %r..."
+                              % (node.name, abort, off, sz, blob[off : off + sz][:100]))
+                        print(f'\nPostpone Node: {postponed.name if postponed else "N/A"} '
+                              f'({postponed!r})')
 
                     nb_absorbed = node_no
                     sz2 = 0
@@ -5348,9 +5338,7 @@ class NodeInternals_NonTerm(NodeInternals):
                         else:
                             raise ValueError
                     else:
-                        if off != 0 and (
-                            not first_pass or pending_upper_postpone is None
-                        ):
+                        if off != 0 and (not first_pass or pending_upper_postpone is None):
                             # In this case, no postponed node exist
                             # but the node finds something that match
                             # its expectation at off>0.
@@ -5380,12 +5368,10 @@ class NodeInternals_NonTerm(NodeInternals):
                         tmp_list.append(node)
 
                         if self.separator is not None:
-                            (
-                                abort,
-                                blob,
-                                consumed_size,
-                                new_sep,
-                            ) = _try_separator_absorption_with(blob, consumed_size)
+                            (abort,
+                             blob,
+                             consumed_size,
+                             new_sep) = _try_separator_absorption_with(blob, consumed_size)
                             if abort:
                                 if nb_absorbed >= min_node:
                                     abort = False
@@ -5491,34 +5477,47 @@ class NodeInternals_NonTerm(NodeInternals):
                     consumed_bits, byte_aligned = self._private_collapse_mode
                 else:
                     consumed_bits = 0
-                    byte_aligned = None
+                    byte_aligned = True
+            else:
+                consumed_bits = None
+                byte_aligned = None
+
+            blob_shift = 0
+            last_idx = 0
 
             # Iterate over all sub-components of the component node_list
             for delim, sublist in self.__iter_csts(node_list):
                 blob_update_pending = False  # reserved for collapse_padding_mode usage
+                blob_sz = len(blob)
 
                 if delim[1] == ">":
                     for idx, node_desc in enumerate(sublist):
                         abort = False
                         base_node, min_node, max_node = self._parse_node_desc(node_desc)
 
-                        vt = (
-                            base_node.get_value_type()
-                            if base_node.is_typed_value()
-                            else None
-                        )
-                        if self.custo.collapse_padding_mode and isinstance(
-                            vt, fvt.BitField
-                        ):
-                            if (
-                                min_node != 1
-                                or max_node != 1
-                                or self.separator is not None
-                                or postponed_node_desc
-                            ):
-                                raise DataModelDefinitionError(
-                                    "Pattern not supported for absorption"
-                                )
+                        vt = base_node.get_value_type() if base_node.is_typed_value() else None
+                        if (isinstance(vt, fvt.BitField)
+                                and self.custo.collapse_padding_mode and byte_aligned):
+                            byte_aligned = (vt.padding_size == 0 and consumed_bits == 0)
+
+                        # if isinstance(vt, fvt.BitField) and self.custo.collapse_padding_mode:
+                        #     DEBUG_PRINT(f'[{id(self)}] ABS_0 [{base_node.name}]: '
+                        #                 f'padding_size: {vt.padding_size}, '
+                        #                 f'byte_aligned: {byte_aligned}, '
+                        #                 f'consumed_bits: {consumed_bits}, '
+                        #                 f'consumed_size {consumed_size}, '
+                        #                 f'partial_blob_shift: {blob_shift}, '
+                        #                 f'blob_update_pending: {blob_update_pending}, '
+                        #                 f'blob: {blob}')
+
+                        if (self.custo.collapse_padding_mode and isinstance(vt, fvt.BitField)
+                                and (not byte_aligned or consumed_bits != 0)):
+
+                            if (min_node != 1
+                                    or max_node != 1
+                                    or self.separator is not None
+                                    or postponed_node_desc):
+                                raise DataModelDefinitionError("Pattern not supported for absorption")
 
                             if not vt.lsb_padding or vt.endian != fvt.VT.BigEndian:
                                 raise DataModelDefinitionError(
@@ -5528,61 +5527,44 @@ class NodeInternals_NonTerm(NodeInternals):
 
                             bytelen = vt.byte_length
                             if vt.padding_size != 0 or consumed_bits != 0:
-                                last_idx = consumed_size + (bytelen - 1)
+                                last_idx = blob_shift + (bytelen - 1)
 
                                 if consumed_bits != 0:
                                     byte_aligned = consumed_bits + vt.padding_size == 8
 
                                     bits_to_be_consumed = consumed_bits + vt.bit_length
-                                    last_idx = consumed_size + int(
-                                        math.ceil(bits_to_be_consumed / 8.0)
-                                    )
+                                    last_idx = blob_shift + int(math.ceil(bits_to_be_consumed / 8.0))
 
-                                    partial_blob = blob[consumed_size:last_idx]
+                                    partial_blob = blob[blob_shift:last_idx]
                                     if partial_blob != b"":
                                         nb_bytes = len(partial_blob)
                                         values = list(
                                             struct.unpack("B" * nb_bytes, partial_blob)
                                         )
                                         result = 0
-                                        for i, v in enumerate(
-                                            values[::-1]
-                                        ):  # big endian
+                                        for i, v in enumerate(values[::-1]):  # big endian
                                             if i == len(values) - 1:
-                                                v = (
-                                                    v
-                                                    & fvt.BitField.padding_one[
-                                                        8 - consumed_bits
-                                                    ]
-                                                )
+                                                v = v & fvt.BitField.padding_one[8 - consumed_bits]
                                             result += v << (i * 8)
 
                                         bits_to_consume = consumed_bits + vt.bit_length
                                         mask_size = (
-                                            int(math.ceil(bits_to_consume / 8.0)) * 8
-                                            - bits_to_consume
+                                                int(math.ceil(bits_to_consume / 8.0)) * 8
+                                                - bits_to_consume
                                         )
 
                                         if not byte_aligned:
                                             if vt.padding == 0:
-                                                result = (
-                                                    result >> mask_size << mask_size
-                                                )
+                                                result = result >> mask_size << mask_size
                                             else:
-                                                result |= fvt.BitField.padding_one[
-                                                    mask_size
-                                                ]
+                                                result |= fvt.BitField.padding_one[mask_size]
 
                                         result <<= consumed_bits
                                         if vt.padding == 1:
-                                            result |= fvt.BitField.padding_one[
-                                                consumed_bits
-                                            ]
+                                            result |= fvt.BitField.padding_one[consumed_bits]
 
                                         l = []
-                                        for i in range(
-                                            nb_bytes - 1, -1, -1
-                                        ):  # big-endian
+                                        for i in range(nb_bytes - 1, -1, -1):  # big-endian
                                             bval = result // (1 << i * 8)
                                             result = result % (1 << i * 8)  # remainder
                                             l.append(bval)
@@ -5590,7 +5572,7 @@ class NodeInternals_NonTerm(NodeInternals):
                                             "{:d}s".format(nb_bytes), bytes(l)
                                         )
                                 else:
-                                    partial_blob = blob[consumed_size:last_idx]
+                                    partial_blob = blob[blob_shift:last_idx]
                                     last_byte = blob[last_idx : last_idx + 1]
                                     if last_byte != b"":
                                         val = struct.unpack("B", last_byte)[0]
@@ -5601,70 +5583,98 @@ class NodeInternals_NonTerm(NodeInternals):
                                                 << vt.padding_size
                                             )
                                         else:
-                                            val |= fvt.BitField.padding_one[
-                                                vt.padding_size
-                                            ]
+                                            val |= fvt.BitField.padding_one[vt.padding_size]
                                         partial_blob += struct.pack("B", val)
                                         byte_aligned = False
                                     else:
                                         byte_aligned = True
-                            else:
-                                partial_blob = blob[
-                                    consumed_size : consumed_size + bytelen
-                                ]
-                                byte_aligned = True
 
-                            (
-                                abort,
-                                remaining_blob,
-                                consumed_size,
-                                consumed_nb,
-                                postponed_sent_back,
-                            ) = _try_absorption_with(
-                                base_node,
-                                1,
-                                1,
-                                partial_blob,
-                                consumed_size,
-                                None,
-                                pending_upper_postpone=pending_postpone_desc,
-                            )
+                            else:
+                                partial_blob = blob[blob_shift : blob_shift + bytelen]
+                                byte_aligned = True
+                                # DEBUG_PRINT(f'[{id(self)}] ABS_2 [{base_node.name}]: '
+                                #             f'padding_size: {vt.padding_size}, '
+                                #             f'consumed_bits: {consumed_bits}, '
+                                #             f'consumed_size {consumed_size}, '
+                                #             f'bytelen: {bytelen}\n'
+                                #             f'partial_blob_shift: {blob_shift}, '
+                                #             f'blob: {blob}, '
+                                #             f'partial_blob: {partial_blob}')
+
+                            (abort,
+                             remaining_blob,
+                             blob_shift,
+                             consumed_nb,
+                             postponed_sent_back,
+                             ) = _try_absorption_with(base_node,1,1,partial_blob,
+                                                      blob_shift,
+                                                      None,
+                                                      pending_upper_postpone=pending_postpone_desc)
 
                             if partial_blob == b"" and abort is not None:
                                 abort = True
+                                consumed_bits = 0
+                                byte_aligned = True
+                                # DEBUG_PRINT(f'[{id(self)}] ABS_3.0 [{base_node.name}]: '
+                                #             f'padding_size: {vt.padding_size}, '
+                                #             f'consumed_bits: {consumed_bits}, '
+                                #             f'consumed_size {consumed_size}')
                                 break
 
                             elif abort is not None and not abort:
                                 consumed_bits = consumed_bits + vt.bit_length
-                                consumed_bits = (
-                                    0 if consumed_bits == 8 else consumed_bits % 8
-                                )
+                                consumed_bits = 0 if consumed_bits == 8 else consumed_bits % 8
+                                byte_aligned = consumed_bits == 0
+
+                                # DEBUG_PRINT(f'[{id(self)}] ABS_3.1 [{base_node.name}]: '
+                                #             f'padding_size: {vt.padding_size}, '
+                                #             f'consumed_bits: {consumed_bits}, '
+                                #             f'partial_blob_shift: {blob_shift}, '
+                                #             f'consumed_size {consumed_size}')
 
                                 # if vt is byte-aligned, then the consumed_size is correct
                                 # otherwise we decrease it
                                 if vt.padding_size != 0 and consumed_bits > 0:
-                                    consumed_size -= 1
+                                    blob_shift -= 1
+                                    assert blob_shift >= 0
 
                                 blob_update_pending = True
-                                # if we reach the end we should update the blob
+                                # if we reach the end we shall update the blob
                                 if idx == len(sublist) - 1:
                                     blob_update_pending = False
-                                    blob = blob[consumed_size:]
+                                    blob = blob[blob_shift:]
 
-                        elif base_node.is_attr_set(NodeInternals.Abs_Postpone) or (
-                            idx < len(sublist) - 1
-                            and base_node.is_nonterm()
-                            and base_node.encoder is not None
-                            and not isinstance(
-                                base_node.encoder, enc.EncoderAbsorptionHelper
-                            )
-                        ):
+                                # DEBUG_PRINT(f'[{id(self)}] ABS_3.2 [{base_node.name}]: '
+                                #             f'padding_size: {vt.padding_size}, '
+                                #             f'consumed_bits: {consumed_bits}, '
+                                #             f'partial_blob_shift: {blob_shift}, '
+                                #             f'consumed_size {consumed_size}, '
+                                #             f'blob_update_pending: {blob_update_pending}, '
+                                #             f'blob: {blob}, '
+                                #             f'partial_blob: {partial_blob}')
+
+                            else:
+                                pass
+                                # DEBUG_PRINT(f'[{id(self)}] ABS_4 [{base_node.name}]: '
+                                #             f'padding_size: {vt.padding_size}, '
+                                #             f'consumed_bits: {consumed_bits}, '
+                                #             f'consumed_size {consumed_size}, '
+                                #             f'partial_blob_shift: {blob_shift}, '
+                                #             f'blob_update_pending: {blob_update_pending}, '
+                                #             f'blob: {blob}, '
+                                #             f'partial_blob: {partial_blob}')
+
+
+                        elif (base_node.is_attr_set(NodeInternals.Abs_Postpone)
+                              or (idx < len(sublist) - 1
+                                  and base_node.is_nonterm()
+                                  and base_node.encoder is not None
+                                  and not isinstance(base_node.encoder, enc.EncoderAbsorptionHelper)
+                              )):
                             if postponed_node_desc or pending_postpone_desc:
                                 raise ValueError(
                                     "\n*** ERROR: Only one node at a time can have its "
-                                    "absorption delayed [current:{!s}]".format(
-                                        postponed_node_desc
-                                    )
+                                    "absorption delayed [current:{!s}]".format(postponed_node_desc)
                                 )
                             postponed_node_desc = node_desc
                             continue
@@ -5681,7 +5691,14 @@ class NodeInternals_NonTerm(NodeInternals):
                                     blob_update_pending = False
                                     blob = blob[consumed_size:]
                                     consumed_bits = 0
-                                    byte_aligned = None
+                                    byte_aligned = True
+                                    blob_shift = 0
+                                    # DEBUG_PRINT(f'[{id(self)}] ABS_5.1 [{base_node.name}]: '
+                                    #             f'consumed_bits: {consumed_bits}, '
+                                    #             f'consumed_size {consumed_size}, '
+                                    #             f'partial_blob_shift: {blob_shift}, '
+                                    #             f'blob_update_pending: {blob_update_pending}, '
+                                    #             f'blob: {blob}')
                                 elif not aligned:
                                     bnode_to_be_cleaned = True
                                     conf = base_node._check_conf(conf)
@@ -5689,30 +5706,62 @@ class NodeInternals_NonTerm(NodeInternals):
                                         consumed_bits,
                                         byte_aligned,
                                     )
+                                    # DEBUG_PRINT(f'[{id(self)}] ABS_5.2 [{base_node.name}]: '
+                                    #             f'consumed_bits: {consumed_bits}, '
+                                    #             f'consumed_size {consumed_size}, '
+                                    #             f'partial_blob_shift: {blob_shift}, '
+                                    #             f'blob_update_pending: {blob_update_pending}'
+                                    #             )
+                                else:
+                                    pass
+                                    # DEBUG_PRINT(f'[{id(self)}] ABS_5.3 [{base_node.name}]: '
+                                    #             f'consumed_bits: {consumed_bits}, '
+                                    #             f'consumed_size {consumed_size}, '
+                                    #             f'partial_blob_shift: {blob_shift}, '
+                                    #             f'blob_update_pending: {blob_update_pending}'
+                                    #             )
 
                             # pending_upper_postpone = pending_postpone_desc
-                            (
-                                abort,
-                                blob,
-                                consumed_size,
-                                consumed_nb,
-                                postponed_sent_back,
-                            ) = _try_absorption_with(
-                                base_node,
-                                min_node,
-                                max_node,
-                                blob,
-                                consumed_size,
-                                postponed_node_desc,
-                                pending_upper_postpone=pending_postpone_desc,
-                            )
+                            (abort,
+                             blob,
+                             consumed_size,
+                             consumed_nb,
+                             postponed_sent_back
+                             ) = _try_absorption_with(base_node, min_node, max_node, blob,
+                                                      consumed_size,
+                                                      postponed_node_desc,
+                                                      pending_upper_postpone=pending_postpone_desc)
+
+                            # DEBUG_PRINT(f'[{id(self)}] ABS_6 [{base_node.name}]: '
+                            #             f'consumed_bits: {consumed_bits}, '
+                            #             f'consumed_size {consumed_size}, '
+                            #             f'partial_blob_shift: {blob_shift}, '
+                            #             f'blob_update_pending: {blob_update_pending}, '
+                            #             f'blob_sz: {blob_sz}, '
+                            #             f'blob: {blob}')
+                            if blob_update_pending and blob_sz > len(blob):
+                                # in this case it means some non-terminal subnodes have already consumed
+                                # part of the blob (because a Bitfield within allows to be byte-aligned
+                                # after absorption)
+                                blob_update_pending = False
+                                consumed_bits = 0
+                                byte_aligned = True
+
                             if self.custo.collapse_padding_mode and bnode_to_be_cleaned:
+                                # DEBUG_PRINT(f'[{id(self)}] ABS_7 [{base_node.name}]: '
+                                #             f'blob_update_pending: {blob_update_pending}, '
+                                #             f'consumed_bits: {consumed_bits}, ')
                                 bnode_to_be_cleaned = False
                                 del base_node.c[conf]._private_collapse_mode
 
                         # In this case max_node is 0
                         if abort is None:
                             continue
+
+                        if (isinstance(vt, fvt.BitField)
+                                and self.custo.collapse_padding_mode and byte_aligned):
+                            consumed_size += blob_shift
+                            blob_shift = 0
 
                         # if _try_absorption_with() return a
                         # tuple, then the postponed node is

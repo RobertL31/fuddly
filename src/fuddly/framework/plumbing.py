@@ -279,7 +279,7 @@ class FmkPlumbing(object):
         self.dm_list = []
 
         self._prj = None
-        self.dm = None
+        self.dm: DataModel|None = None
         self.lg = None
 
         self.targets = {}  # enabled targets, further initialized as a dict (tg_id -> tg obj)
