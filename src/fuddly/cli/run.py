@@ -8,27 +8,45 @@ import os.path
 import os
 import argcomplete
 
+# We are part of fuddly so using an internal function is fine:
+from fuddly.framework.plumbing import _populate_projects as populate_projects
+
 def get_scripts() -> list():
-    paths = []
+    # The function is called for when the CLI is called and if we use the list option
+    # having paths be an attribute to the functions means we will not run it twice
+    if get_scripts.paths is not None:
+        return get_scripts.paths
+    else:
+        get_scripts.paths = []
+
+    project_modules=[]
 
     # User scripts
-    script_dir = os.path.join(gr.fuddly_data_folder, "projects_scripts")
-    if os.path.isdir(script_dir):
-        path, _, files = next(os.walk(script_dir))
-        for f in files:
-            paths.append("fuddly.projects_scripts." + f.removesuffix(".py"))
+    projects = populate_projects(gr.user_projects_folder, prefix="user_projects", projects=None)
+    for dname, file_list in projects.items():
+        prefix = dname.replace(os.sep, ".") + "."
+        for name in file_list:
+            m = find_spec(prefix+name)
+            # This should never happen
+            if m is None or m.origin is None:
+                print(f"{prefx+name} detected as a module in {gr.fuddly_data_folder}/user_projects,"
+                      " but could not be imported")
+                continue
+            project_modules.append(m)
 
-    # Third party/modules
+    # Scripts from modules
     for ep in entry_points(group=gr.ep_group_names["projects"]):
         m = find_spec(ep.module)
-        # An entry point does not actually point to a module 
-        # i.e. somebody broke there package
+        # If an entry point does not actually point to a module
+        # i.e. somebody broke their package
         if m is None or m.origin is None:
             # the entry point is not a module, let's just ignore it
             print(f"*** {ep.module} is not a python module, check your installed modules ***")
             continue
-        p = m.origin
+        project_modules.append(m)
 
+    for m in project_modules:
+        p = m.origin
         if os.path.basename(p) == "__init__.py":
             p=os.path.dirname(p)
         else:
@@ -37,9 +55,11 @@ def get_scripts() -> list():
         if os.path.isdir(os.path.join(p, "scripts")):
             for f in next(os.walk(os.path.join(p, "scripts")))[2]:
                 if f.endswith(".py") and f != "__init__.py":
-                    paths.append(ep.module + ".scripts." + f.removesuffix(".py"))
+                    get_scripts.paths.append(m.name + ".scripts." + f.removesuffix(".py"))
 
-    return paths
+    return get_scripts.paths
+
+get_scripts.paths=None
 
 def script_from_pkg_name(name) -> str:
     # pkg_name.script.name -> ("pkg_name.script", "name.py")
