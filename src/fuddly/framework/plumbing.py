@@ -251,6 +251,39 @@ class FmkTask(threading.Thread):
         self._stop.set()
 
 
+def _populate_projects(search_path, prefix="" , projects=None):
+    if projects is None:
+        projects = collections.OrderedDict()
+    search_path=os.path.normpath(search_path)
+    for (path, dirs, files) in os.walk(search_path, followlinks=True):
+        rel_path=path.removeprefix(search_path).removeprefix(os.sep)
+        if "__init__.py" in files:
+            # normapth make sure the path does not end in a '/'
+            key=os.path.normpath(os.path.join(prefix, os.path.dirname(rel_path)))
+            basename=os.path.basename(path.removeprefix(search_path).removeprefix(os.sep))
+            if basename != "":
+                if projects.get(key) is None:
+                    projects[key] = []
+                projects[key].append(basename)
+                dirs.clear()
+                continue
+        if "__pycache__" in dirs:
+            dirs.remove("__pycache__")
+        # Take all python files except for __init__.py and remove the .py suffix
+        files = list(
+                map(lambda x: x.removesuffix(".py"),
+                    filter(lambda x: x.endswith(".py"),
+                       filter(lambda x: x != "__init__.py", files)
+                    )
+                )
+            )
+        if len(files) != 0:
+            key=os.path.normpath(os.path.join(prefix, rel_path))
+            if projects.get(key) is None:
+                projects[key] = []
+            projects[key].extend(files)
+    return projects
+
 class FmkPlumbing(object):
     """
     Defines the methods to operate every sub-systems of fuddly
@@ -928,47 +961,18 @@ class FmkPlumbing(object):
         self._get_projects_fs(fmkDB_update)
         self._get_projects_module(fmkDB_update)
 
+
     def _get_projects_fs(self, fmkDB_update=True):
         if not self._quiet:
             self.print(colorize(FontStyle.BOLD + "=" * 70 + "[ Projects (filesystem) ]==", rgb=Color.FMKINFOGROUP))
 
         projects = collections.OrderedDict()
 
-        def populate_projects(search_path, prefix=""):
-            search_path=os.path.normpath(search_path)
-            for (path, dirs, files) in os.walk(search_path, followlinks=True):
-                rel_path=path.removeprefix(search_path).removeprefix(os.sep)
-                if "__init__.py" in files:
-                    # normapth make sure the path does not end in a '/'
-                    key=os.path.normpath(os.path.join(prefix, os.path.dirname(rel_path)))
-                    basename=os.path.basename(path.removeprefix(search_path).removeprefix(os.sep))
-                    if basename != "":
-                        if projects.get(key) is None:
-                            projects[key] = []
-                        projects[key].append(basename)
-                        dirs.clear()
-                        continue
-                if "__pycache__" in dirs:
-                    dirs.remove("__pycache__")
-                # Take all python files except for __init__.py and remove the .py suffix
-                files = list(
-                        map(lambda x: x.removesuffix(".py"),
-                            filter(lambda x: x.endswith(".py"), 
-                               filter(lambda x: x != "__init__.py", files)
-                            )
-                        )
-                    )
-                if len(files) != 0:
-                    key=os.path.normpath(os.path.join(prefix, rel_path))
-                    if projects.get(key) is None:
-                        projects[key] = []
-                    projects[key].extend(files)
-
         if gr.is_running_from_fs:
             if not self._quiet:
                 self.print(colorize("*** Running directly from sources, loading internal projects ***", rgb=Color.WARNING))
-            populate_projects(gr.projects_folder, prefix="fuddly/projects")
-        populate_projects(gr.user_projects_folder, prefix="user_projects")
+            _populate_projects(gr.projects_folder, prefix="fuddly/projects", projects=projects)
+        _populate_projects(gr.user_projects_folder, prefix="user_projects", projects=projects)
 
         for dname, file_list in projects.items():
             if not self._quiet:
