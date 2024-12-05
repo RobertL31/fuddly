@@ -1,5 +1,4 @@
 import fuddly.cli.argparse_wrapper as argparse
-import os
 from pathlib import Path
 from importlib import util
 from fuddly.framework import global_resources as gr
@@ -8,15 +7,7 @@ from fuddly.cli.error import CliException
 
 conf = {}
 
-
-# For DMs
-# <args.name>/
-# ├── dm.py
-# ├── __init__.py
-# ├── samples (?)
-# │   └── sample_file.txt (?)
-# └── strategy.py
-
+# The conf dict describs the files in the template and what variable to interpolate in them
 conf["dm"] = [
     {"name": "__init__.py"},
     {"name": "strategy.py"},
@@ -48,7 +39,7 @@ conf["project"] = {
 conf["module"] = [
     {
         "name": "pyproject.toml",
-        "interpolate": ["name", "object_name", "module_name"], 
+        "interpolate": ["name", "object_name", "module_name"],
     },
     {
         "name": "README.md",
@@ -56,23 +47,25 @@ conf["module"] = [
     },
 ]
 
+
 class PartialMatchString(str):
     def __eq__(self, str_b):
         return self.__contains__(str_b)
 
+
 def start(args: argparse.Namespace):
 
-    _conf=dict()
+    _conf = dict()
     # TODO should the template dir be in fuddly_folder so users can define their own templates?
     # origin is the __init__.py file of the module so taking "parent" gives us the module folder
     src_dir = Path(util.find_spec("fuddly.cli").origin).parent.joinpath("templates")
-    module_name=args.name
+    module_name = args.name
 
-    dest_dir=Path(gr.fuddly_data_folder).absolute()
+    dest_dir = Path(gr.fuddly_data_folder).absolute()
     if args.dest is not None:
-        dest_dir=Path(args.dest).absolute()
+        dest_dir = Path(args.dest).absolute()
     elif args.pyproject:
-        dest_dir=Path(".").absolute()
+        dest_dir = Path(".").absolute()
     else:
         if args.object.startswith("project"):
             dest_dir = dest_dir/"user_projects"
@@ -91,19 +84,19 @@ def start(args: argparse.Namespace):
 
     match PartialMatchString(args.object):
         case "dm" | "data-model":
-            create_msg=f"Creating new data-model \"{module_name}\""
-            _src_dir=src_dir/"data_model"
-            _conf=conf["dm"]
-            object_name="data_model"
+            create_msg = f"Creating new data-model \"{module_name}\""
+            _src_dir = src_dir/"data_model"
+            _conf = conf["dm"]
+            object_name = "data_model"
         case "project:":
-            args.object, template =args.object.split(':')
-            create_msg=f"Creating new project \"{args.name}\" based on the \"{template}\" template"
-            _src_dir=src_dir/template
+            args.object, template = args.object.split(':')
+            create_msg = f"Creating new project \"{args.name}\" based on the \"{template}\" template"
+            _src_dir = src_dir/template
             if not _src_dir.exists():
                 print(f"The '{template}' project template does not exist.")
                 return 1
-            _conf=conf["project"][template]
-            object_name=args.object
+            _conf = conf["project"][template]
+            object_name = args.object
         case _:
             dest_dir.rmdir()
             raise CliException(f"{args.object} is not a valide object name.")
@@ -138,11 +131,10 @@ def start(args: argparse.Namespace):
     )
 
 
-
 def _create_conf(dstPath: Path, srcPath: Path, conf: dict, **kwargs):
     for e in conf:
-        _srcPath=srcPath
-        _dstPath=dstPath
+        _srcPath = srcPath
+        _dstPath = dstPath
         if e.get("path") is not None:
             _dstPath = _dstPath/e["path"]
             _srcPath = _srcPath/e["path"]
@@ -151,4 +143,3 @@ def _create_conf(dstPath: Path, srcPath: Path, conf: dict, **kwargs):
         f = _dstPath/e["name"]
         f.touch()
         f.write_text(string.Template(data).substitute(**kwargs))
-

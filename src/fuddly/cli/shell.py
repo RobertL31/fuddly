@@ -1,7 +1,8 @@
 import fuddly.cli.argparse_wrapper as argparse
+from fuddly.framework.plumbing import FmkPlumbing, FmkShell
+
 
 def start(args: argparse.Namespace):
-    from fuddly.framework.plumbing import FmkPlumbing,FmkShell
     fmkdb = args.fmkdb
     external_display = args.external_display
     quiet = args.quiet
