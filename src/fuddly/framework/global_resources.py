@@ -316,7 +316,7 @@ class Error(object):
     DataUnusable = -13
     DataInvalid = -14
 
-    # FmkPlumbing.launch_operator() error code
+    # FmkPlumbing.launch_director() error code
     InvalidOp = -20
     WrongOpPlan = -21
 

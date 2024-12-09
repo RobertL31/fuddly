@@ -29,7 +29,7 @@ def get_scripts() -> list():
             m = find_spec(prefix+name)
             # This should never happen
             if m is None or m.origin is None:
-                print(f"{prefx+name} detected as a module in {gr.fuddly_data_folder}/user_projects,"
+                print(f"{prefix+name} detected as a module in {gr.fuddly_data_folder}/user_projects,"
                       " but could not be imported")
                 continue
             project_modules.append(m)

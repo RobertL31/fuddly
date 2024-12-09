@@ -25,7 +25,7 @@ List of features
   - data manipulation based on disruptors (objects that implement
     specific data transformation)
   - scenario infrastructure (for modeling protocol logic)
-  - virtual operators
+  - virtual directors
 
 + and so on...
 

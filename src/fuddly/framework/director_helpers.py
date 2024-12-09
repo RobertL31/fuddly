@@ -28,7 +28,7 @@ import datetime
 from fuddly.framework.global_resources import *
 from fuddly.framework.tactics_helpers import _handle_user_inputs, _user_input_conformity, _restore_dmaker_internals
 
-class Operation(object):
+class Instruction(object):
 
     Stop = 1
     Exportable = 2
@@ -38,9 +38,9 @@ class Operation(object):
         self.action_register = []
         self.status = 0
         self.flags = {
-            Operation.Stop: False,
-            Operation.Exportable: False,
-            Operation.CleanupDMakers: False
+            Instruction.Stop: False,
+            Instruction.Exportable: False,
+            Instruction.CleanupDMakers: False
             }
 
     def set_flag(self, name):
@@ -56,11 +56,11 @@ class Operation(object):
     def set_status(self, status):
         self.status = status
 
-    def add_instruction(self, actions, seed=None, tg_ids=None):
+    def add_action(self, actions, seed=None, tg_ids=None):
         l = list(actions) if actions is not None else None
         self.action_register.append((l, seed, tg_ids))
 
-    def get_instructions(self):
+    def get_actions(self):
         return self.action_register
 
 
@@ -93,28 +93,28 @@ class LastInstruction(object):
     def get_comments(self):
         return self.comments
 
-    def set_operator_status(self, status_code):
+    def set_director_status(self, status_code):
         self._status_code = status_code
 
-    def get_operator_status(self):
+    def get_director_status(self):
         return self._status_code
 
-    def set_operator_feedback(self, info):
+    def set_director_feedback(self, info):
         self.feedback_info = info
 
-    def get_operator_feedback(self):
+    def get_director_feedback(self):
         return self.feedback_info
 
     def get_timestamp(self):
         return self._now
 
 
-class Operator(object):
+class Director(object):
 
     _args_desc = None
 
     def __str__(self):
-        return "Operator '{:s}'".format(self.__class__.__name__)
+        return "Director '{:s}'".format(self.__class__.__name__)
 
     def start(self, fmk_ops, dm, monitor, target, logger, user_input):
         '''
@@ -130,15 +130,15 @@ class Operator(object):
         '''
         pass
 
-    def plan_next_operation(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
+    def plan_next_instruction(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
         '''
-        Shall return a Operation object that contains the operations
+        Shall return an Instruction object that contains the actions
         that you want fuddly to perform.
 
         Returns:
-          Operation: Operation you want fuddly to perform.
+          Instruction: Actions you want fuddly to perform.
         '''
-        raise NotImplementedError('Operators shall implement this method!')
+        raise NotImplementedError('Directors shall implement this method!')
 
     def do_after_all(self, fmk_ops, dm, monitor, target, logger):
         '''
@@ -161,7 +161,7 @@ class Operator(object):
         return linst
 
     def _start(self, fmk_ops, dm, monitor, target, logger, user_input):
-        # sys.stdout.write("\n__ setup operator '%s' __" % self.__class__.__name__)
+        # sys.stdout.write("\n__ setup director '%s' __" % self.__class__.__name__)
         if not _user_input_conformity(self, user_input, self._args_desc):
             return False
 
@@ -178,17 +178,17 @@ class Operator(object):
         return ok
 
 
-def operator(prj, args=None):
-    def internal_func(operator_cls):
-        operator_cls._args_desc = {} if args is None else args
+def director(prj, args=None):
+    def internal_func(director_cls):
+        director_cls._args_desc = {} if args is None else args
         if args is not None:
             # create specific attributes
             for k, v in args.items():
                 desc, default, arg_type = v
-                setattr(operator_cls, k, default)
+                setattr(director_cls, k, default)
         # register an object of this class
-        operator = operator_cls()
-        prj.register_operator(operator.__class__.__name__, operator)
-        return operator_cls
+        director = director_cls()
+        prj.register_director(director.__class__.__name__, director)
+        return director_cls
 
     return internal_func

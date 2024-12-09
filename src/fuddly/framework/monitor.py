@@ -88,7 +88,7 @@ class ProbeUser(object):
 
         # Once a probe has started we do not clear self._started_event to avoid blocking the framework
         # in the situation where this method will be called again while the probe won't have been
-        # restarted (currently in launch_operator, after having started the operator).
+        # restarted (currently in launch_director, after having started the director).
 
     def is_alive(self):
         return self._thread is not None and self._thread.is_alive()
@@ -648,7 +648,7 @@ class Probe(object):
         """
         (Optional method) To be overloaded with any signature that fits your needs
         Could be called by user code through :meth:`framework.monitor.Monitor.configure_probe`
-        Use case example is to call it from an :class:`framework.operator_helpers.Operator`
+        Use case example is to call it from an :class:`framework.director_helpers.Director`
 
         Args:
             *args: anything that fits your needs

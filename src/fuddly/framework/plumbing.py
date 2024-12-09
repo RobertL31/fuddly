@@ -48,7 +48,7 @@ from fuddly.framework.error_handling import *
 from fuddly.framework.evolutionary_helpers import EvolutionaryScenariosFactory
 from fuddly.framework.logger import *
 from fuddly.framework.monitor import *
-from fuddly.framework.operator_helpers import *
+from fuddly.framework.director_helpers import *
 from fuddly.framework.project import *
 from fuddly.framework.scenario import *
 from fuddly.framework.tactics_helpers import *
@@ -2485,7 +2485,7 @@ class FmkPlumbing(object):
             return True, None
 
         # All feedback entries that are available for relevant framework users (scenario
-        # callbacks, operators, ...) are flushed just after sending a new data because it
+        # callbacks, directors, ...) are flushed just after sending a new data because it
         # means the previous feedback entries are obsolete.
         self.fmkDB.flush_current_feedback()
 
@@ -3170,68 +3170,68 @@ class FmkPlumbing(object):
             self.register_in_data_bank(self.__current[-1])
 
     @EnforceOrder(accepted_states=["S2"])
-    def show_operators(self):
-        operators = self.prj.get_operators()
-        self.lg.print_console("-=[ Operators ]=-", rgb=Color.INFO, style=FontStyle.BOLD)
+    def show_directors(self):
+        directors = self.prj.get_directors()
+        self.lg.print_console("-=[ Directors ]=-", rgb=Color.INFO, style=FontStyle.BOLD)
         self.lg.print_console("")
-        for o in operators:
-            self.lg.print_console(o, rgb=Color.SUBINFO)
-            desc = self._dmaker_desc_str(self.prj.get_operator(o))
+        for d in directors:
+            self.lg.print_console(d, rgb=Color.SUBINFO)
+            desc = self._dmaker_desc_str(self.prj.get_director(d))
             self.lg.print_console(desc, limit_output=False)
 
         self.lg.print_console("\n\n", nl_before=False)
 
     @EnforceOrder(accepted_states=["S2"])
-    def get_operator(self, name):
-        operator = self.prj.get_operator(name)
-        if operator is None:
-            self.set_error("Invalid operator", code=Error.InvalidOp)
+    def get_director(self, name):
+        director = self.prj.get_director(name)
+        if director is None:
+            self.set_error("Invalid director", code=Error.InvalidOp)
             return None
         else:
-            return operator
+            return director
 
     @EnforceOrder(accepted_states=["S2"])
-    def launch_operator(self, name, user_input=None, use_existing_seed=True, verbose=False):
-        operator = self.prj.get_operator(name)
-        if operator is None:
-            self.set_error("Invalid operator", code=Error.InvalidOp)
+    def launch_director(self, name, user_input=None, use_existing_seed=True, verbose=False):
+        director = self.prj.get_director(name)
+        if director is None:
+            self.set_error("Invalid director", code=Error.InvalidOp)
             return False
 
         self._reset_fmk_internals(reset_existing_seed=(not use_existing_seed))
 
         try:
-            ok = operator._start(self._exportable_fmk_ops, self.dm, self.mon, self.targets, self.lg, user_input)
+            ok = director._start(self._exportable_fmk_ops, self.dm, self.mon, self.targets, self.lg, user_input)
         except:
-            self._handle_user_code_exception("Operator has crashed during its start() method")
+            self._handle_user_code_exception("Director has crashed during its start() method")
             return False
         finally:
-            self.mon.wait_for_probe_initialization()  # operator.start() can start probes.
+            self.mon.wait_for_probe_initialization()  # Director.start() can start probes.
 
         if not ok:
-            self.set_error("The _start() method of Operator '%s' has returned an error!" % name,
+            self.set_error("The _start() method of Director '%s' has returned an error!" % name,
                            code=Error.UnrecoverableError)
             return False
 
         fmk_feedback = FmkFeedback()
 
-        exit_operator = False
-        while not exit_operator:
+        exit_director = False
+        while not exit_director:
             try:
-                operation = operator.plan_next_operation(self._exportable_fmk_ops, self.dm,
-                                                         self.mon, self.targets, self.lg, fmk_feedback)
+                instruction = director.plan_next_instruction(self._exportable_fmk_ops, self.dm,
+                                                           self.mon, self.targets, self.lg, fmk_feedback)
             except:
-                self._handle_user_code_exception("Operator has crashed during its plan_next_operation() method")
+                self._handle_user_code_exception("Director has crashed during its plan_next_operation() method")
                 return False
 
-            if operation is None:
-                self.set_error("An operator shall always return an Operation() object in its plan_next_operation()",
+            if instruction is None:
+                self.set_error("An Director shall always return an Operation() object in its plan_next_operation()",
                                code=Error.UserCodeError)
                 return False
 
-            if operation.is_flag_set(Operation.CleanupDMakers):
+            if instruction.is_flag_set(Instruction.CleanupDMakers):
                 self.cleanup_all_dmakers(reset_existing_seed=False)
 
-            if operation.is_flag_set(Operation.Stop):
+            if instruction.is_flag_set(Instruction.Stop):
                 self.retrieve_and_log_target_feedback()
                 break
             else:
@@ -3239,7 +3239,7 @@ class FmkPlumbing(object):
                 data_list = []
                 change_list = []
 
-                instr_list = operation.get_instructions()
+                instr_list = instruction.get_actions()
                 for idx, instruction in enumerate(instr_list):
                     action_list, orig, tg_ids = instruction
 
@@ -3254,7 +3254,7 @@ class FmkPlumbing(object):
 
                     if self.is_not_ok():
                         if fmk_feedback.is_flag_set(FmkFeedback.NeedChange):
-                            self.set_error("Operator has not made a choice that allows to produce usable data",
+                            self.set_error("Director has not made a choice that allows to produce usable data",
                                            code=Error.WrongOpPlan)
                             return False
                         else:
@@ -3283,7 +3283,7 @@ class FmkPlumbing(object):
                 try:
                     data_list = self._do_sending_and_logging_init(data_list)
                 except TargetFeedbackError:
-                    self.lg.log_fmk_info("Operator will shutdown because residual target "
+                    self.lg.log_fmk_info("Director will shutdown because residual target "
                                          "feedback indicate a negative status code")
                     break
 
@@ -3292,26 +3292,26 @@ class FmkPlumbing(object):
 
                 data_list = self._send_data(data_list)
                 if self._sending_error:
-                    self.lg.log_fmk_info("Operator will shutdown because of a sending error")
+                    self.lg.log_fmk_info("Director will shutdown because of a sending error")
                     break
                 elif self._stop_sending:
-                    self.lg.log_fmk_info("Operator will shutdown because a DataProcess has yielded")
+                    self.lg.log_fmk_info("Director will shutdown because a DataProcess has yielded")
                     break
                 elif data_list is None:
-                    self.lg.log_fmk_info("Operator will shutdown because there is no data to send")
+                    self.lg.log_fmk_info("Director will shutdown because there is no data to send")
                     break
 
                 # All feedback entries that are available for relevant framework users (scenario
-                # callbacks, operators, ...) are flushed just after sending a new data because it
+                # callbacks, Directors, ...) are flushed just after sending a new data because it
                 # means the previous feedback entries are obsolete.
                 self.fmkDB.flush_current_feedback()
 
                 multiple_data = len(data_list) > 1
 
                 try:
-                    linst = operator.do_after_all(self._exportable_fmk_ops, self.dm, self.mon, self.targets, self.lg)
+                    linst = director.do_after_all(self._exportable_fmk_ops, self.dm, self.mon, self.targets, self.lg)
                 except:
-                    self._handle_user_code_exception("Operator has crashed during its .do_after_all() method")
+                    self._handle_user_code_exception("Director has crashed during its .do_after_all() method")
                     return False
 
                 if linst.is_instruction_set(LastInstruction.RecordData):
@@ -3325,13 +3325,13 @@ class FmkPlumbing(object):
                     self._log_data(data_list[0], verbose=verbose)
 
                 ret = self.wait_for_target_readiness()
-                # Note: the condition (ret = -1) is supposed to be managed by the operator
+                # Note: the condition (ret = -1) is supposed to be managed by the Director
                 if ret < -1:
-                    exit_operator = True
+                    exit_director = True
                     if ret == -2:
-                        self.lg.log_fmk_info("Operator will shutdown because waiting has been cancelled by the user")
+                        self.lg.log_fmk_info("Director will shutdown because waiting has been cancelled by the user")
                     elif ret == -3:
-                        self.lg.log_fmk_info("Operator will shutdown because of exception in user code")
+                        self.lg.log_fmk_info("Director will shutdown because of exception in user code")
 
                 # Target fbk is logged only at the end of a burst
                 if self._burst_countdown == self._burst:
@@ -3343,26 +3343,26 @@ class FmkPlumbing(object):
                 if self._burst_countdown == self._burst:
                     cont2 = self.monitor_probes(force_record=True)
                     if not cont1 or not cont2:
-                        exit_operator = True
-                        self.lg.log_fmk_info("Operator will shutdown because something is going wrong with "
+                        exit_director = True
+                        self.lg.log_fmk_info("Director will shutdown because something is going wrong with "
                                              "the target and the recovering procedure did not succeed...")
 
                 self._do_after_feedback_retrieval(data_list)
 
-                op_feedback = linst.get_operator_feedback()
-                op_status = linst.get_operator_status()
-                op_tstamp = linst.get_timestamp()
-                if op_feedback or op_status:
-                    self.lg.log_operator_feedback(operator=operator, content=op_feedback,
-                                                  status_code=op_status, timestamp=op_tstamp)
+                dir_feedback = linst.get_director_feedback()
+                dir_status = linst.get_director_status()
+                dir_tstamp = linst.get_timestamp()
+                if dir_feedback or dir_status:
+                    self.lg.log_director_feedback(director=director, content=dir_feedback,
+                                                  status_code=dir_status, timestamp=dir_tstamp)
 
                 comments = linst.get_comments()
                 if comments:
                     self.lg.log_comment(comments)
 
-                if op_status is not None and op_status < 0:
-                    exit_operator = True
-                    self.lg.log_fmk_info("Operator will shutdown because it returns a negative status")
+                if dir_status is not None and dir_status < 0:
+                    exit_director = True
+                    self.lg.log_fmk_info("Director will shutdown because it returns a negative status")
                     for tg in self.targets.values():
                         self._recover_target(tg)
 
@@ -3372,13 +3372,13 @@ class FmkPlumbing(object):
 
                 # Delay introduced after logging data
                 if not self._delay_sending():
-                    exit_operator = True
-                    self.lg.log_fmk_info("Operator will shutdown because waiting has been cancelled by the user")
+                    exit_director = True
+                    self.lg.log_fmk_info("Director will shutdown because waiting has been cancelled by the user")
 
         try:
-            operator.stop(self._exportable_fmk_ops, self.dm, self.mon, self.targets, self.lg)
+            director.stop(self._exportable_fmk_ops, self.dm, self.mon, self.targets, self.lg)
         except:
-            self._handle_user_code_exception("Operator has crashed during its stop() method")
+            self._handle_user_code_exception("Director has crashed during its stop() method")
             return False
 
         self._reset_fmk_internals(reset_existing_seed=(not use_existing_seed))
@@ -3902,14 +3902,14 @@ class FmkPlumbing(object):
             sep = colorize(", ", rgb=Color.FMKINFO)
             lines = []
             for idx, entry in enumerate(dmaker_list, start=1):
-                if idx % 5 != 0:
+                if idx % 2 != 0:
                     ln += colorize(entry, rgb=Color.FMKSUBINFO) + sep
                 else:
                     ln += colorize(entry, rgb=Color.FMKSUBINFO)
                     lines.append(colorize("   | ", rgb=Color.FMKINFO) + ln)
                     ln = ""
 
-            if len(dmaker_list) % 5 != 0:
+            if len(dmaker_list) % 2 != 0:
                 lines.append(colorize("   | ", rgb=Color.FMKINFO) + ln[: -len(sep)])
 
             self.lg.print_console(" [ " + title + " ]", rgb=Color.FMKINFO, nl_before=True, nl_after=False)
@@ -4822,10 +4822,10 @@ class FmkShell(cmd.Cmd):
 
         return False
 
-    def do_launch_operator(self, line, use_existing_seed=False, verbose=False):
+    def do_launch_director(self, line, use_existing_seed=False, verbose=False):
         """
-        Launch the specified operator and use any existing seed
-        |_ syntax: launch_operator <op_name>
+        Launch the specified director and use any existing seed
+        |_ syntax: launch_director <op_name>
         """
         self.__error = True
 
@@ -4843,30 +4843,30 @@ class FmkShell(cmd.Cmd):
         operator = t[0][0]
         user_input = t[0][1]
 
-        self.fz.launch_operator(operator, user_input, use_existing_seed=use_existing_seed,
+        self.fz.launch_director(operator, user_input, use_existing_seed=use_existing_seed,
                                 verbose=verbose)
 
         self.__error = False
         return False
 
-    def do_launch_operator_keepseed(self, line):
+    def do_launch_director_keepseed(self, line):
         """
-        Launch the specified operator without using any current seed
-        |_ syntax: launch_operator_keepseed  <op_name>
+        Launch the specified director without using any current seed
+        |_ syntax: launch_director_keepseed  <op_name>
         """
-        ret = self.do_launch_operator(line, use_existing_seed=True)
+        ret = self.do_launch_director(line, use_existing_seed=True)
         return ret
 
-    def do_launch_operator_verbose(self, line):
+    def do_launch_director_verbose(self, line):
         """
-        Launch the specified operator and use any existing seed (pretty print enabled)
-        |_ syntax: launch_operator_verbose <op_name>
+        Launch the specified director and use any existing seed (pretty print enabled)
+        |_ syntax: launch_director_verbose <op_name>
         """
-        ret = self.do_launch_operator(line, use_existing_seed=False, verbose=True)
+        ret = self.do_launch_director(line, use_existing_seed=False, verbose=True)
         return ret
 
-    def do_show_operators(self, line):
-        self.fz.show_operators()
+    def do_show_directors(self, line):
+        self.fz.show_directors()
         return False
 
     def __parse_instructions(self, cmdline):

@@ -82,7 +82,7 @@ def main(argv: List[str] = None):
             help="limit the information displayed at startup.",
         )
 
-    with subparsers.add_parser("run", help="run a fuddly project script") as p:
+    with (subparsers.add_parser("run", help="run a fuddly project script") as p):
         # XXX Should you be able to run script from outside the script dir(s?) ?
         parsers["run"] = p
 
@@ -104,7 +104,7 @@ def main(argv: List[str] = None):
             "args",
             nargs=argparse.REMAINDER,
             help="arguments to pass through to the script",
-        ).completer = script_argument_completer
+        ) #.completer = script_argument_completer
 
     with subparsers.add_parser("new", help="create a new project or data model") as p:
         parsers["new"] = p

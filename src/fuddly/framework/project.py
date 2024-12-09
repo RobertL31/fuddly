@@ -100,7 +100,7 @@ class Project(object):
         self.evol_processes = None
         self.targets = None
         self.dm = None
-        self.operators = {}
+        self.directors = {}
 
     ################################
     ### Knowledge Infrastructure ###
@@ -201,12 +201,12 @@ class Project(object):
             self.evol_processes = []
         self.evol_processes += processes
 
-    def register_operator(self, name, obj):
-        if name in self.operators:
-            print("\n*** /!\\ ERROR: The operator name '{:s}' is already used\n".format(name))
+    def register_director(self, name, obj):
+        if name in self.directors:
+            print("\n*** /!\\ ERROR: The director name '{:s}' is already used\n".format(name))
             raise ValueError
 
-        self.operators[name] = obj
+        self.directors[name] = obj
 
     def register_probe(self, probe, blocking=False):
         try:
@@ -250,16 +250,16 @@ class Project(object):
             fh._stop()
 
 
-    def get_operator(self, name):
+    def get_director(self, name):
         try:
-            ret = self.operators[name]
+            ret = self.directors[name]
         except KeyError:
             return None
 
         return ret
 
-    def get_operators(self):
-        return self.operators
+    def get_directors(self):
+        return self.directors
 
     def get_probes(self):
         return self.monitor.get_probes_names()

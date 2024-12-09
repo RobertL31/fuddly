@@ -73,12 +73,12 @@ targets = [(local_tg, (display_mem_check, 0.1)),
            printer1_tg, net_tg, netsrv_tg, rawnetsrv_tg]
 
 
-@operator(project,
+@director(project,
           args={'init': ('make the model walker ignore all the steps until the provided one', 1, int),
                 'max_steps': ("number of test cases to run", 20, int),
                 'mode': ('strategy mode (0 or 1)', 0, int),
                 'path': ("path of the target application (for LocalTarget's only)", '/usr/bin/display', str)})
-class Op1(Operator):
+class Dir1(Director):
 
     def start(self, fmk_ops, dm, monitor, target, logger, user_input):
 
@@ -105,19 +105,19 @@ class Op1(Operator):
         if isinstance(target, LocalTarget):
             self._last_feedback = None
 
-    def plan_next_operation(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
+    def plan_next_instruction(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
 
-        op = Operation()
+        inst = Instruction()
 
         if self.max_steps > 0:
             
             if fmk_feedback.is_flag_set(FmkFeedback.NeedChange):
                 try:
                     self.current_gen_id = self.gen_ids.pop(0)
-                    op.set_flag(Operation.CleanupDMakers)
+                    inst.set_flag(Instruction.CleanupDMakers)
                 except IndexError:
-                    op.set_flag(Operation.Stop)
-                    return op
+                    inst.set_flag(Instruction.Stop)
+                    return inst
 
                 change_list = fmk_feedback.get_flag_context(FmkFeedback.NeedChange)
                 for dmaker, idx in change_list:
@@ -142,11 +142,11 @@ class Op1(Operator):
             actions = None
 
         if actions:
-            op.add_instruction(actions)
+            inst.add_action(actions)
         else:
-            op.set_flag(Operation.Stop)
+            inst.set_flag(Instruction.Stop)
 
-        return op
+        return inst
 
 
     def do_after_all(self, fmk_ops, dm, monitor, target, logger):
@@ -157,8 +157,8 @@ class Op1(Operator):
             info = fbk.get_bytes()
             status_code = fbk.get_error_code()
             if status_code is not None and status_code < 0:
-                linst.set_operator_feedback('This input has crashed the target!')
-                linst.set_operator_status(-status_code) # does not prevent operator to continue so
+                linst.set_director_feedback('This input has crashed the target!')
+                linst.set_director_status(-status_code) # does not prevent director to continue so
                                                         # provide a value > 0
             export = True
             if info in self._last_feedback:

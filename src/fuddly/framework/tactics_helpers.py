@@ -491,6 +491,7 @@ class DataMaker(object):
 
 class Generator(DataMaker):
     produced_seed = None
+    shortname = None
 
     def __init__(self):
         DataMaker.__init__(self)
@@ -1022,6 +1023,9 @@ class DynGeneratorFromScenario(Generator):
 
 class Disruptor(DataMaker):
 
+    op_type = None
+    valid = None
+
     def __init__(self):
         DataMaker.__init__(self)
         self.__attrs = {
@@ -1091,6 +1095,9 @@ class Disruptor(DataMaker):
 
 
 class StatefulDisruptor(DataMaker):
+
+    op_type = None
+    valid = None
 
     def __init__(self):
         DataMaker.__init__(self)

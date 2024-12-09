@@ -115,11 +115,11 @@ else:
     targets = []
 
 
-@operator(project,
+@director(project,
           args={'init': ('make the model walker ignore all the steps until the provided one', 1, int),
                 'max_steps': ("number of test cases to run", 20, int),
                 'mode': ('strategy mode: 0, 1 (fuzz DEV), 2 (Mass-Storage) or 666 (BigConf)', 2, int)})
-class Op1(Operator):
+class Op1(Director):
 
     def start(self, fmk_ops, dm, monitor, target, logger, user_input):
 
@@ -165,12 +165,12 @@ class Op1(Operator):
         for msg in self.msg_list:
             logger.print_console(msg)
 
-    def plan_next_operation(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
+    def plan_next_instruction(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
 
-        op = Operation()
+        op = Instruction()
 
         if self.max_steps >= 0 and self.count == self.max_steps:
-            op.set_flag(Operation.Stop)
+            op.set_flag(Instruction.Stop)
             return op
 
         self.prev_data_list = fmk_feedback.get_produced_data()
@@ -184,14 +184,14 @@ class Op1(Operator):
                 self.msg_list.append(msg)
 
             if self.exhausted_data_cpt >= self.exhaustible_data_nb:
-                op.set_flag(Operation.Stop)
+                op.set_flag(Instruction.Stop)
                 return op
 
         for instr, idx in zip(self.instr_list, range(len(self.instr_list))):
             if self.orig_data[idx] is None:
-                op.add_instruction(instr)
+                op.add_action(instr)
             else:
-                op.add_instruction(None, seed=self.orig_data[idx])
+                op.add_action(None, seed=self.orig_data[idx])
 
 
         self.count += 1
