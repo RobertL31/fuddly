@@ -2798,7 +2798,9 @@ class FmkPlumbing(object):
                     err_detected1 = status < tg.STATUS_THRESHOLD_FOR_RECOVERY
                 else:
                     err_detected1 = False
-                err_detected2 = self._log_directly_retrieved_target_feedback(tg=tg, preamble=p, epilogue=e)
+                err_detected2 = self._log_directly_retrieved_target_feedback(tg=tg,
+                                                                             preamble=p, epilogue=e,
+                                                                             store_in_db=tg.store_fbk_in_db)
                 go_on = self._recover_target(tg) if err_detected1 or err_detected2 else True
                 if not go_on:
                     ok = False
@@ -2809,7 +2811,8 @@ class FmkPlumbing(object):
     def log_target_residual_feedback(self):
         return self.retrieve_and_log_target_feedback(residual=True)
 
-    def _log_directly_retrieved_target_feedback(self, tg, preamble=None, epilogue=None):
+    def _log_directly_retrieved_target_feedback(self, tg, preamble=None, epilogue=None,
+                                                store_in_db=True):
         """
         This method is to be used when the target does not make use
         of Logger.collect_feedback() facility. We thus try to
@@ -2836,7 +2839,8 @@ class FmkPlumbing(object):
                                                      status_code=status,
                                                      timestamp=tstamp,
                                                      preamble=preamble,
-                                                     epilogue=epilogue)
+                                                     epilogue=epilogue,
+                                                     store_in_db=store_in_db)
 
             raw_fbk = tg_fbk.get_bytes()
             if raw_fbk is not None:
@@ -2845,7 +2849,8 @@ class FmkPlumbing(object):
                                                  status_code=err_code,
                                                  timestamp=tg_fbk.get_timestamp(),
                                                  preamble=preamble,
-                                                 epilogue=epilogue)
+                                                 epilogue=epilogue,
+                                                 store_in_db=store_in_db)
 
             tg_fbk.cleanup()
 

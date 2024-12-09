@@ -45,7 +45,7 @@ class Logger(object):
     """
     The Logger is used for keeping the history of the communication
     with the Target. The methods are used by the framework, but can
-    also be leveraged by an Operator.
+    also be leveraged by a Director.
     """
 
     fmkDB = None
@@ -73,10 +73,10 @@ class Logger(object):
             in which the logger is embedded will be used.
           record_data (bool): If True, each emitted data will be stored in a specific
             file within `exported_data/`.
-          explicit_data_recording (bool): Used for logging outcomes further to an Operator instruction. If True,
-            the operator would have to state explicitly if it wants the just emitted data to be recorded.
+          explicit_data_recording (bool): Used for logging outcomes further to a Director instruction. If True,
+            the director would have to state explicitly if it wants the just emitted data to be recorded.
             Such notification is possible when the framework call its method
-            :meth:`framework.operator_helpers.Operator.do_after_all()`, where the Operator can take its decision
+            :meth:`framework.director_helpers.Director.do_after_all()`, where the Director can take its decision
             after the observation of the target feedback and/or probes outputs.
           export_raw_data (bool): If True, will log the data as it is, without trying to interpret it
             as human readable text.
@@ -540,7 +540,8 @@ class Logger(object):
             # feedback will not be recorded because data is not recorded
             return False
 
-    def _log_feedback(self, source, content, status_code, timestamp, record=True):
+    def _log_feedback(self, source, content, status_code, timestamp,
+                      record=True, store_in_db=True):
         processed_feedback = self._process_target_feedback(content)
         fbk_cond = status_code is not None and status_code < 0
         hdr_color = Color.FEEDBACK_ERR if fbk_cond else Color.FEEDBACK
@@ -602,6 +603,7 @@ class Logger(object):
                         ts,
                         self._encode_target_feedback(fbk),
                         status_code=status_code,
+                        store_in_db=store_in_db,
                     )
             else:
                 self.fmkDB.insert_feedback(
@@ -610,9 +612,11 @@ class Logger(object):
                     timestamp,
                     self._encode_target_feedback(content),
                     status_code=status_code,
+                    store_in_db=store_in_db,
                 )
 
-    def log_collected_feedback(self, preamble=None, epilogue=None):
+    def log_collected_feedback(self, preamble=None, epilogue=None,
+                               store_in_db=True):
         """
         Used within the scope of the Logger feedback-collector feature.
         If your target implement the interface :meth:`Target.get_feedback`, no need to
@@ -646,7 +650,8 @@ class Logger(object):
 
         for idx, fbk_record in enumerate(fbk_list):
             timestamp, fbk_src, fbk, status = fbk_record
-            self._log_feedback(fbk_src, fbk, status, timestamp, record=record)
+            self._log_feedback(fbk_src, fbk, status, timestamp,
+                               record=record, store_in_db=store_in_db)
             collected_status[fbk_src.obj] = status
 
         if epilogue is not None:
@@ -655,29 +660,33 @@ class Logger(object):
         return collected_status
 
     def log_target_feedback_from(
-        self, source, content, status_code, timestamp, preamble=None, epilogue=None
+        self, source, content, status_code, timestamp, preamble=None, epilogue=None,
+        store_in_db=True
     ):
         record = self.shall_record()
 
         if preamble is not None:
             self.log_fn(preamble, do_record=record, rgb=Color.FMKINFO)
 
-        self._log_feedback(source, content, status_code, timestamp, record=record)
+        self._log_feedback(source, content, status_code, timestamp,
+                           record=record, store_in_db=store_in_db)
 
         if epilogue is not None:
             self.log_fn(epilogue, do_record=record, rgb=Color.FMKINFO)
 
-    def log_operator_feedback(self, operator, content, status_code, timestamp):
+    def log_director_feedback(self, director, content, status_code, timestamp, store_in_db=True):
         self._log_feedback(
-            FeedbackSource(operator),
+            FeedbackSource(director),
             content,
             status_code,
             timestamp,
             record=self.shall_record(),
+            store_in_db=store_in_db
         )
 
     def log_probe_feedback(
-        self, probe, content, status_code, timestamp, related_tg=None
+        self, probe, content, status_code, timestamp, related_tg=None,
+        store_in_db=True
     ):
         self._log_feedback(
             FeedbackSource(probe, related_tg=related_tg),
@@ -685,6 +694,7 @@ class Logger(object):
             status_code,
             timestamp,
             record=self.shall_record(),
+            store_in_db=store_in_db
         )
 
     def _process_target_feedback(self, feedback):

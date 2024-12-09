@@ -45,6 +45,7 @@ class Target(object):
     name = None
     feedback_timeout = None
     sending_delay = 0
+    store_fbk_in_db = True
 
     # tg_id = None  # this is set by FmkPlumbing
 
