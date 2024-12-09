@@ -116,15 +116,15 @@ def retrieve_padi_from_feedback_and_update(env, current_step, next_step, feedbac
     return retrieve_X_from_feedback(env, current_step, next_step, feedback, x='padi', update=True)
 
 
-@disruptor(tactics, dtype="FIX_FIELDS", weight=1,
-           args={'reevaluate_csts': ('reevaluate constraints on the whole message to preserve consistency',
+@operator(tactics, dtype="FIX_FIELDS", weight=1,
+          args={'reevaluate_csts': ('reevaluate constraints on the whole message to preserve consistency',
                                      False, bool)})
-class t_fix_pppoe_msg_fields(Disruptor):
+class t_fix_pppoe_msg_fields(Operator):
     mac_src = None
     service_name = None
     host_uniq = None
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         n = prev_data.content
         n.freeze()
         error_msg = '\n*** The node has no path to: {:s}. Thus, ignore it.\n'\

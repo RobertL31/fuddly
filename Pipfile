@@ -22,6 +22,7 @@ sphinxcontrib-napoleon = "*"
 sphinx-rtd-theme = "*"
 argcomplete = "*"
 fuddly = {file = "."}
+lz4 = "*"
 
 [dev-packages]
 ddt = "*"

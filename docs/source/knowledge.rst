@@ -13,8 +13,8 @@ The *Knowledge Infrastructure* enables to:
   the hardware, and so on) in your project file (refer to :ref:`kn:adding`);
 
 - and to leverage this knowledge in relevant fuddly subsystems or in user-defined scenarios,
-  disruptors, ... (refer to :ref:`kn:leverage`). For instance, fuzzing a :class:`fuddly.framework.value_types.Filename`
-  typed-node with the disruptor tTYPE will adapt the generated data relative to the OS, Language,
+  operators, ... (refer to :ref:`kn:leverage`). For instance, fuzzing a :class:`fuddly.framework.value_types.Filename`
+  typed-node with the operator tTYPE will adapt the generated data relative to the OS, Language,
   and so on if this information is available.
 
 
@@ -145,7 +145,7 @@ Depending on your project, you may want to define new specific information categ
 You will simply have to define new python enumeration that inherits from
 :class:`fuddly.framework.knowledge.information.Info` in your project file. Then, you would need to use them
 in specific feedback handler (refer to :ref:`kn:handle-fbk`) in order to leverage them within
-specific scenarios or disruptors for instance.
+specific scenarios or operators for instance.
 
 .. _kn:leverage:
 
@@ -168,7 +168,7 @@ within their description will benefit from knowledge about the targets under tes
 
 If knowledge on the targets are provided to the framework (either from the project file or because
 some in-use feedback handlers populated at some point the knowledge pool) then the previous type nodes
-will restrict their own fuzzing cases, impacting directly the disruptor ``tTYPE`` (refer to :ref:`dis:ttype`)
+will restrict their own fuzzing cases, impacting directly the operator ``tTYPE`` (refer to :ref:`dis:ttype`)
 in order to avoid doing irrelevant tests (e.g., providing a C format strings input to an ADA program).
 
 If there is no knowledge on a specific category, then all specific fuzzing cases related to that category
@@ -184,7 +184,7 @@ available to the user in various context like:
 - Scenario specification (refer to :ref:`scenario-infra`) where all callbacks can access the knowledge pool through the scenario environment
   (:class:`fuddly.framework.scenario.ScenarioEnv`) under the attribute `fuddly.knowledge_source`.
 
-- Disruptors or generators implementation (refer to :ref:`tuto:disruptors`), through the attribute
+- Operators or generators implementation (refer to :ref:`tuto:operators`), through the attribute
   :attr:`fuddly.framework.tactics_helpers.DataMaker.knowledge_source`.
 
 - Data model description (refer to :ref:`data-model`), through the attribute

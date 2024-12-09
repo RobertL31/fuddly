@@ -740,7 +740,7 @@ class NodeInternals(object):
             NodeInternals.Highlight: False,
             # Used for debugging purpose
             NodeInternals.DEBUG: False,
-            # Used to express that someone (a disruptor for instance) is
+            # Used to express that someone (a operator for instance) is
             # currently doing something with the node and doesn't want
             # that someone else modify it.
             NodeInternals.LOCKED: False,
@@ -1406,8 +1406,7 @@ class NodeInternals_Empty(NodeInternals):
 
     def set_child_env(self, env):
         self.env = env
-        print("\n*** Empty Node: {!s}".format(hex(id(self))))
-        # raise AttributeError
+        # print("\n*** Empty Node: {!s}".format(hex(id(self))))
 
     def get_child_nodes_by_attr(self, internals_criteria, semantics_criteria,
                                 owned_conf, conf, path_regexp, exclude_self,
@@ -6769,7 +6768,7 @@ class Node(object):
       fuzz_weight (int): The fuzz weight is an optional attribute of Node() which
         express Data Model designer's hints for prioritizing the nodes
         to fuzz. If set, this attribute is used by some generic
-        *disruptors* (the ones that rely on a ModelWalker object---refer to
+        *operators* (the ones that rely on a ModelWalker object---refer to
         fuzzing_primitives.py)
       depth (int): Depth of the node within the graph from a specific given
         root. Will be computed lazily (only when requested).
@@ -7171,7 +7170,7 @@ class Node(object):
         The fuzz weight is an optional attribute of Node() which
         express Data Model designer's hints for prioritizing the nodes
         to fuzz. If set, this attribute is used by some generic
-        *disruptors* (the ones that rely on a ModelWalker object---refer to
+        *operators* (the ones that rely on a ModelWalker object---refer to
         fuzzing_primitives.py)
 
         Args:

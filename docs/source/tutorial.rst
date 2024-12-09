@@ -5,7 +5,7 @@ In this tutorial we will begin with the basic UI of ``fuddly``. Then
 we will see how to use ``fuddly`` directly from an advanced python
 interpreter like ``ipython``. Finally, we will walk through basic
 steps to create a new data model and the way to define specific
-disruptors.
+operators.
 
 
 Using ``fuddly`` simple UI: ``Fuddly Shell``
@@ -361,14 +361,14 @@ can use the following command::
 
    >> send_loop 5 ZIP(determinist=True) tWALK
 
-We use for this example, the generic stateful disruptor ``tWALK`` whose purpose
-is to simply walk through the data model. Note that disruptors are
+We use for this example, the generic stateful operator ``tWALK`` whose purpose
+is to simply walk through the data model. Note that operators are
 chainable, each one consuming what comes from the left.
 
 .. seealso:: Refer to :ref:`tuto:dmaker-chain` for details on data makers chains.
 
 Note that if you want to send data indefinitely until the generator exhausts (in our case ``ZIP``)
-or a stateful disruptor (in our case ``tWALK``) of the chain exhausts you should use ``-1`` as
+or a stateful operator (in our case ``tWALK``) of the chain exhausts you should use ``-1`` as
 the number of iteration. In our case it means issuing the following command::
 
    >> send_loop -1 ZIP(determinist=True) tWALK
@@ -384,16 +384,16 @@ How to Perform Automatic Modification on Data
 +++++++++++++++++++++++++++++++++++++++++++++
 
 In order to perform modification on a generated data, you can use
-`disruptors` (look at :ref:`dis:generic-disruptors`), which are the
+`operators` (look at :ref:`dis:generic-operators`), which are the
 basic blocks for this task. You can look at the available
-disruptors---either specific to the data model or generic--by typing
-the command ``show_disruptors``, which will print a brief description
-of each disruptor along with their parameters.
+operators---either specific to the data model or generic--by typing
+the command ``show_operators``, which will print a brief description
+of each operator along with their parameters.
 
 .. note::
 
    The following command allows to briefly look at all the defined
-   generators and disruptors (called data makers), usable within the
+   generators and operators (called data makers), usable within the
    frame of the current data model.
 
    .. code-block:: none
@@ -408,7 +408,7 @@ of each disruptor along with their parameters.
          | EXIST_COND, LEN_GEN, MISC_GEN, OFF_GEN, SEPARATOR
          | SHAPE, TESTNODE, ZIP, ZIP_00
 
-      ===[ Disruptor Types ]==========================================================
+      ===[ Operator Types ]==========================================================
 
        [ Generic ]
          | ALT, C, COPY, Cp, EXT
@@ -417,9 +417,9 @@ of each disruptor along with their parameters.
          | tWALK
 
 
-You can also chain disruptors in order to perform advanced
+You can also chain operators in order to perform advanced
 transformations---kind of dataflow programming. You can mix
-generic/specific stateless/stateful disruptors, fuddly will take care
+generic/specific stateless/stateful operators, fuddly will take care
 of sequencing everything correctly.
 
 Let's illustrate this with the following example:
@@ -432,17 +432,17 @@ Let's illustrate this with the following example:
    >> send ZIP_00 C(nb=2:path="ZIP_00/file_list/.*/file_name") tTYPE(max_steps=50:order=True) SIZE(sz=256)
 
    __ setup generator 'g_zip_00' __
-   __ setup disruptor 'd_corrupt_node_bits' __
-   __ cleanup disruptor 'd_fuzz_typed_nodes' __
-   __ setup disruptor 'd_fuzz_typed_nodes' __
-   __ setup disruptor 'd_max_size' __
+   __ setup operator 'd_corrupt_node_bits' __
+   __ cleanup operator 'd_fuzz_typed_nodes' __
+   __ setup operator 'd_fuzz_typed_nodes' __
+   __ setup operator 'd_max_size' __
 
    ========[ 1 ]==[ 20/08/2015 - 15:20:06 ]=======================
    ### Target ack received at: None
    ### Step 1:
     |- generator type: ZIP_00 | generator name: g_zip_00 | User input: G=[ ], S=[ ]
    ### Step 2:
-    |- disruptor type: C | disruptor name: d_corrupt_node_bits | User input: G=[ ], S=[nb=2,path='ZIP_00/file_list/.*/file_name']
+    |- operator type: C | operator name: d_corrupt_node_bits | User input: G=[ ], S=[nb=2,path='ZIP_00/file_list/.*/file_name']
     |- data info:
        |_ current fuzzed node: ZIP_00/file_list/file:3/header/file_name/cts
        |_ orig data: b'photo-photo-paysage-norvege.png'
@@ -451,7 +451,7 @@ Let's illustrate this with the following example:
        |_ orig data: b'hello.pdf'
        |_ corrupted data: b'hello.pd\xf6'
    ### Step 3:
-    |- disruptor type: tTYPE | disruptor name: d_fuzz_typed_nodes | User input: G=[max_steps=50], S=[order=True]
+    |- operator type: tTYPE | operator name: d_fuzz_typed_nodes | User input: G=[max_steps=50], S=[order=True]
     |- data info:
        |_ model walking index: 1
        |_  |_ run: 1 / -1 (max)
@@ -460,7 +460,7 @@ Let's illustrate this with the following example:
        |_  |_ original node value: b'1400' (ascii: b'\x14\x00')
        |_  |_ corrupt node value:  b'1300' (ascii: b'\x13\x00')
    ### Step 4:
-    |- disruptor type: SIZE | disruptor name: d_max_size | User input: G=[ ], S=[sz=256]
+    |- operator type: SIZE | operator name: d_max_size | User input: G=[ ], S=[sz=256]
     |- data info:
        |_ orig node length: 1054002
        |_ right truncation
@@ -472,16 +472,16 @@ Let's illustrate this with the following example:
 
 After the command is issued, fuddly will ask the generator ``ZIP_00``
 to generate a modeled ZIP archive and then will provide the outcomes
-to the following disruptor ``C``. At this moment, fuddly will disable
+to the following operator ``C``. At this moment, fuddly will disable
 temporarily the generator, as the generated data need to be fully
 consumed first.
 
-The disruptor ``C`` will then be executed to consume the generated
-data. This disruptor performs basic corruption within the modeled data
+The operator ``C`` will then be executed to consume the generated
+data. This operator performs basic corruption within the modeled data
 (it randomly chooses nodes of the graph-based modeled data and perform
 random bit corruption on them). You can see that some parameters are
 also given to it, namely: ``nb`` and ``path``. These parameters are
-specific to this disruptor. The first one asks it to choose only two
+specific to this operator. The first one asks it to choose only two
 nodes and the second one restrict the set of nodes thanks to a regular
 expression that selects the root paths from which the terminal nodes
 to corrupt can be chosen.
@@ -518,14 +518,14 @@ can see on lines 16 & 19.
 
 .. note::
    Parameters are given to data makers
-   (generators/disruptors) through a tuple wrapped with the characters
+   (generators/operators) through a tuple wrapped with the characters
    ``(`` and ``)`` and separated with the character ``:``. Syntax::
    
      data_maker_type(param1=val1:param2=val2)
 
 
 After ``C`` has performed its corruption, fuddly gets the result and
-provides it to ``tTYPE``. This disruptor is stateful, so it could
+provides it to ``tTYPE``. This operator is stateful, so it could
 outputs many different data from the one provided to it. In this
 specific case, it will walk the graph representing the data and
 generate new samples each time it encounter a typed terminal node. In
@@ -533,34 +533,34 @@ the `previous run <#dis-chain-run1>`_, we see on line 30 that the
 original value of the terminal node ``../version_needed`` (a
 little-endian UINT16) has been altered to ``1300`` from the original
 value ``1400``---which are the hexadecimal encoded representation of
-the integer. Basically, the disruptor performed a decrement by one of
+the integer. Basically, the operator performed a decrement by one of
 this integer. On the `next run <#dis-chain-run2>`_---line 16---you can
-see that this disruptor performs an increment by one instead of. And
+see that this operator performs an increment by one instead of. And
 it will change this integer until he has no more cases---these cases
 are based on the syntactic & semantic properties provided within the
 ZIP data model. Afterwards, it will go on with the next node.
 
 .. note::
 
-   Stateless disruptors output exactly one data for each data provided
+   Stateless operators output exactly one data for each data provided
    as input.
 
-   Stateful disruptors can output many data after being fed by only one
-   data. When a stateful disruptor is called by ``fuddly``---within a
-   *chain* of disruptors---every data makers on its left are
-   temporarily disabled. Thus, the next time the *chain* of disruptors
+   Stateful operators can output many data after being fed by only one
+   data. When a stateful operator is called by ``fuddly``---within a
+   *chain* of operators---every data makers on its left are
+   temporarily disabled. Thus, the next time the *chain* of operators
    is issued, the execution will begin directly with this stateful
-   disruptor. And when this one has fully consumed its input, that is,
+   operator. And when this one has fully consumed its input, that is,
    when it cannot output any new data and handover to ``fuddly``, the
-   latter will re-enable the nearest left-side stateful disruptors
+   latter will re-enable the nearest left-side stateful operators
    that can provide new data, or the generator otherwise.
 
 .. seealso:: About *model walking* infrastructure of ``fuddly`` refer to
-             :ref:`tuto:disruptors`. Insights about how it deals with
+             :ref:`tuto:operators`. Insights about how it deals with
              non-terminal changing nodes is provided.
 
 About the parameters given to ``tTYPE``, the generic one
-``max_steps=50`` requests this disruptor to stop producing new data
+``max_steps=50`` requests this operator to stop producing new data
 after a maximum of 50 for a unique input. The specific one
 ``order=True`` request it to strictly follow the data structure for
 producing its outcomes. Whether the order is set to ``False`` (or not
@@ -570,11 +570,11 @@ specified within the data model, especially the fuzz weight
 attribute that can be changed on any node and which defaults to 1. The
 bigger the value the higher the priority to be altered.
 
-.. note:: To consult the help of a specific disruptor you can issue
-          the command ``show_disruptors <DISRUPTOR_TYPE>``
+.. note:: To consult the help of a specific operator you can issue
+          the command ``show_operators <OPERATOR_TYPE>``
 
 Finally, every data produced by ``tTYPE`` is given to the stateless
-disruptor ``SIZE`` whose purpose is to truncate the data if its size
+operator ``SIZE`` whose purpose is to truncate the data if its size
 exceeds 256---as the parameter ``sz`` is equal to 256.
 
 
@@ -591,7 +591,7 @@ exceeds 256---as the parameter ``sz`` is equal to 256.
     |- generator type: ZIP_00 | generator name: g_zip_00 | User input: G=[ ], S=[ ]
      ...
    ### Step 1:
-    |- disruptor type: tTYPE | disruptor name: d_fuzz_typed_nodes | User input: G=[max_steps=50], S=[order=True]
+    |- operator type: tTYPE | operator name: d_fuzz_typed_nodes | User input: G=[max_steps=50], S=[order=True]
     |- data info:
        |_ model walking index: 2
        |_  |_ run: 2 / -1 (max)
@@ -599,10 +599,10 @@ exceeds 256---as the parameter ``sz`` is equal to 256.
        |_  |_ value type:         <framework.value_types.Fuzzy_INT16 object at 0x7fbf961e5250>
        |_  |_ original node value: b'1400' (ascii: b'\x14\x00')
        |_  |_ corrupt node value:  b'1500' (ascii: b'\x15\x00')
-       |_ Data maker [#1] of type 'ZIP_00' (name: g_zip_00) has been disabled by this disruptor taking over it.
-       |_ Data maker [#2] of type 'C' (name: d_corrupt_node_bits) has been disabled by this disruptor taking over it.
+       |_ Data maker [#1] of type 'ZIP_00' (name: g_zip_00) has been disabled by this operator taking over it.
+       |_ Data maker [#2] of type 'C' (name: d_corrupt_node_bits) has been disabled by this operator taking over it.
    ### Step 2:
-    |- disruptor type: SIZE | disruptor name: d_max_size | User input: G=[ ], S=[sz=256]
+    |- operator type: SIZE | operator name: d_max_size | User input: G=[ ], S=[sz=256]
     |- data info:
        |_ orig node length: 1054002
        |_ right truncation
@@ -614,7 +614,7 @@ exceeds 256---as the parameter ``sz`` is equal to 256.
 
 
 On this `second command execution <#dis-chain-run2>`_ you can see on
-lines 17-18 that the generator ``ZIP_00`` and the disruptor ``C`` have
+lines 17-18 that the generator ``ZIP_00`` and the operator ``C`` have
 been disabled as explained before.
 
 .. code-block:: none
@@ -629,7 +629,7 @@ been disabled as explained before.
     |- generator type: ZIP_00 | generator name: g_zip_00 | User input: G=[ ], S=[ ]
      ...
    ### Step 1:
-    |- disruptor type: tTYPE | disruptor name: d_fuzz_typed_nodes | User input: G=[max_steps=50], S=[order=True]
+    |- operator type: tTYPE | operator name: d_fuzz_typed_nodes | User input: G=[max_steps=50], S=[order=True]
     |- data info:
        |_ model walking index: 50
        |_  |_ run: 6 / -1 (max)
@@ -637,10 +637,10 @@ been disabled as explained before.
        |_  |_ value type:         <framework.value_types.Fuzzy_INT32 object at 0x7fbfec9e9048>
        |_  |_ original node value: b'6f840100' (ascii: b'o\x84\x01\x00')
        |_  |_ corrupt node value:  b'00000080' (ascii: b'\x00\x00\x00\x80')
-       |_ Data maker [#1] of type 'ZIP_00' (name: g_zip_00) has been disabled by this disruptor taking over it.
-       |_ Data maker [#2] of type 'C' (name: d_corrupt_node_bits) has been disabled by this disruptor taking over it.
+       |_ Data maker [#1] of type 'ZIP_00' (name: g_zip_00) has been disabled by this operator taking over it.
+       |_ Data maker [#2] of type 'C' (name: d_corrupt_node_bits) has been disabled by this operator taking over it.
    ### Step 2:
-    |- disruptor type: SIZE | disruptor name: d_max_size | User input: G=[ ], S=[sz=256]
+    |- operator type: SIZE | operator name: d_max_size | User input: G=[ ], S=[sz=256]
     |- data info:
        |_ orig node length: 1054002
        |_ right truncation
@@ -648,12 +648,12 @@ been disabled as explained before.
    ### Data size: 256 bytes
    ### Emitted data is stored in the file:
    /home/test/Tools/fuddly/exported_data/zip/2015_08_20_152011_15.zip
-   __ disruptor handover 'd_fuzz_typed_nodes' __
+   __ operator handover 'd_fuzz_typed_nodes' __
    -------------------
    | ERROR / WARNING |
    -------------------
        (_ FMK [#DataUnusable]: The data maker (tTYPE) has returned unusable data. _)
-       (_ FMK [#HandOver]: Disruptor 'd_fuzz_typed_nodes' (tTYPE) has yielded! _)
+       (_ FMK [#HandOver]: Operator 'd_fuzz_typed_nodes' (tTYPE) has yielded! _)
    >> 
 
 
@@ -661,7 +661,7 @@ If you go on issuing the same command, you will arrive at a point
 where ``tTYPE`` stops producing new data as seen `above
 <#dis-chain-run50>`_ on lines 31 & 32. Thus, if you go on, this time
 the generator will be re-enabled to produce new data as well as the
-disruptor ``C``, as seen `below <#dis-chain-run51>`_ on line 3 & 5.
+operator ``C``, as seen `below <#dis-chain-run51>`_ on line 3 & 5.
 
 .. code-block:: none
    :name: dis-chain-run51
@@ -673,7 +673,7 @@ disruptor ``C``, as seen `below <#dis-chain-run51>`_ on line 3 & 5.
    ### Step 1:
     |- generator type: ZIP_00 | generator name: g_zip_00 | User input: G=[ ], S=[ ]
    ### Step 2:
-    |- disruptor type: C | disruptor name: d_corrupt_node_bits | User input: G=[ ], S=[nb=2,path='ZIP_00/file_list/.*/file_name']
+    |- operator type: C | operator name: d_corrupt_node_bits | User input: G=[ ], S=[nb=2,path='ZIP_00/file_list/.*/file_name']
     |- data info:
        |_ current fuzzed node: ZIP_00/file_list/file:2/header/file_name/cts
        |_ orig data: b'hello.pdf'
@@ -682,7 +682,7 @@ disruptor ``C``, as seen `below <#dis-chain-run51>`_ on line 3 & 5.
        |_ orig data: b'Fond-ecran-paysage-gratuit.jpg'
        |_ corrupted data: b'Fond-ecran-paysage\xafgratuit.jpg'
    ### Step 3:
-    |- disruptor type: tTYPE | disruptor name: d_fuzz_typed_nodes | User input: G=[max_steps=50], S=[order=True]
+    |- operator type: tTYPE | operator name: d_fuzz_typed_nodes | User input: G=[max_steps=50], S=[order=True]
     |- data info:
        |_ model walking index: 1
        |_  |_ run: 1 / -1 (max)
@@ -691,7 +691,7 @@ disruptor ``C``, as seen `below <#dis-chain-run51>`_ on line 3 & 5.
        |_  |_ original node value: b'1400' (ascii: b'\x14\x00')
        |_  |_ corrupt node value:  b'1300' (ascii: b'\x13\x00')
    ### Step 4:
-    |- disruptor type: SIZE | disruptor name: d_max_size | User input: G=[ ], S=[sz=256]
+    |- operator type: SIZE | operator name: d_max_size | User input: G=[ ], S=[sz=256]
     |- data info:
        |_ orig node length: 1054002
        |_ right truncation
@@ -716,10 +716,10 @@ In such situation, if you want to interrupt the looping, just use ``Ctrl+C``.
 
 .. _tuto:reset-dmaker:
 
-Resetting & Cloning Disruptors
-++++++++++++++++++++++++++++++
+Resetting & Cloning Operators
++++++++++++++++++++++++++++++
 
-Whether you want to use generators or disruptors that you previously
+Whether you want to use generators or operators that you previously
 used in a *data maker chain*, you would certainly need to reset it or
 to clone it. Indeed, every data maker has an internal sequencing state,
 that remember if it has been disabled (and for generators it may also
@@ -737,7 +737,7 @@ You can also reset all the data makers at once by issuing the following command:
 
 .. note::
    In the case where the original data (i.e., the pristine generated data that does not get changed
-   by any disruptor) is asked to be preserved (for instance by using the command ``send_loop_keepseed``),
+   by any operator) is asked to be preserved (for instance by using the command ``send_loop_keepseed``),
    for repeatability purpose (when issuing the same command again), using the previous command will
    also remove this original data. Thus you could prefer to use the command ``cleanup_dmaker`` that
    will only reset the sequencing state, without resetting the seed (i.e., the original data).
@@ -844,7 +844,7 @@ such a situation occurs, will save the related JPG file under
 also try to avoid saving JPG files that trigger errors whose type has
 already been seen. Once the director is all done with this first test
 case, it can plan the next actions it needs ``fuddly`` to perform for
-it. In our case, it will go on with the next iteration of a disruptor
+it. In our case, it will go on with the next iteration of a operator
 chain, basically ``JPG(finite=True) tTYPE``.
 
 
@@ -888,8 +888,8 @@ That command will store these data to the `Data Bank`. From then on, you could u
 as previously explained.
 
 .. note::
-   You can use disruptors with a ``replay_*`` command. However if these disruptors are stateful,
-   you should issue the command only once. Then, if you want to walk through the stateful disruptor,
+   You can use operators with a ``replay_*`` command. However if these operators are stateful,
+   you should issue the command only once. Then, if you want to walk through the stateful operator,
    you only have to switch to a ``send``-like command, and use as generator name the string ``NOGEN``
 
    For instance::
@@ -1043,8 +1043,8 @@ can be performed:
    # Send the current data, log it and save it
    fmk.send_data_and_log(Data(dt))
 
-   # Perform a tTYPE disruption on it, but give the 5th generated
-   # cases and enforce the disruptor to strictly follow the ZIP structure
+   # Perform a tTYPE operation on it, but give the 5th generated
+   # cases and enforce the operator to strictly follow the ZIP structure
    # Finally truncate the output to 200 bytes
    action_list = [('tTYPE', UI(init=5, order=True)), ('SIZE', UI(sz=200))]
    altered_data = fmk.process_data(action_list, seed=Data(dt))
@@ -1060,7 +1060,7 @@ you have the ``xtermcolor`` python library):
 
    ====[ 3 ]==[ 27/06/2019 - 12:07:19 ]============================================
    ### Step 1:
-    |- disruptor type: tTYPE | disruptor name: sd_fuzz_typed_nodes | User input: [init=5,order=True]
+    |- operator type: tTYPE | operator name: sd_fuzz_typed_nodes | User input: [init=5,order=True]
     |- data info:
        |_ model walking index: 4
        |_  |_ run: 4 / -1 (max)
@@ -1071,7 +1071,7 @@ you have the ``xtermcolor`` python library):
        |_  |_ corrupt node value  (hex): b'0000'
        |_                       (ascii): b'\x00\x00'
    ### Step 2:
-    |- disruptor type: SIZE | disruptor name: d_max_size | User input: [sz=200]
+    |- operator type: SIZE | operator name: d_max_size | User input: [sz=200]
     |- data info:
        |_ orig node length: 595
        |_ right truncation
@@ -1095,7 +1095,7 @@ of test cases can be done thanks to the following lines:
    :linenos:
 
     # Hereunder the chosen fuzzing follow a 2-step approach:
-    # 1- the disruptor tTYPE is called on the seed and starts from the 5th test case
+    # 1- the operator tTYPE is called on the seed and starts from the 5th test case
     # 2- a trailer payload is added at the end of what is generated previsouly
 
     dp = DataProcess([('tTYPE', UI(deep=True, init=5)),
@@ -1113,7 +1113,7 @@ various threads would block the correct termination of the framework)::
    fmk.stop()
 
 For more information on how to manually make modification on data,
-refer to the section :ref:`tuto:disruptors`
+refer to the section :ref:`tuto:operators`
 
 
 Implementing a Data Model and Defining a Project Environment
@@ -1169,12 +1169,12 @@ Generating data boils down to walk the graph that model the data
 format. After each traversal, a data is produced and each traversal
 make the graph evolving, in a deterministic or random way depending on
 your intent. Graph walking is also a way to perform node alteration on
-the fly (through entities called *disruptors*).
+the fly (through entities called *operators*).
 
-.. seealso:: Refer to :ref:`tuto:disruptors` to learn how to perform
+.. seealso:: Refer to :ref:`tuto:operators` to learn how to perform
              modification of data generated from the model. Refer to
              :ref:`tuto:dmaker-chain` in order to play with existing
-             generic disruptors within the frame of the ``fuddly``
+             generic operators within the frame of the ``fuddly``
              shell.
 
 Different kinds of node are defined within fuddly in order to model
@@ -1315,8 +1315,8 @@ This folder shall be named ``mydf`` and contain 3 files:
   ``MyDF`` data format, **which is the topic of the current section**.
 
 ``strategy.py``
-  Contain optional disruptors specific to the data model
-  (:ref:`tuto:disruptors`)
+  Contain optional operators specific to the data model
+  (:ref:`tuto:operators`)
 
 ``__init__.py``
   This needs to be include for python to recognize the folder as a module
@@ -1610,7 +1610,7 @@ can be seen on the figure :ref:`testnode-show`.
 .. note:: You can notice that the graph paths of the modeled data are
           presented in a similar form as Unix file paths (for
           instance ``TestNode/middle/val2``). As it is explained in
-          the section :ref:`tuto:disruptors`, using these paths are a
+          the section :ref:`tuto:operators`, using these paths are a
           typical way for referencing a node within a modeled data.
 
 
@@ -1876,10 +1876,10 @@ Two compementary options are provided by the framework:
 - The definition of `Virtual Directors`. refer to :ref:`tuto:director`
 
 
-.. _tuto:disruptors:
+.. _tuto:operators:
 
-Defining Specific Disruptors
-----------------------------
+Defining Specific Operators
+---------------------------
 
 .. seealso:: For insights on how to manipulate data, refer to
              :ref:`data-manip`.
@@ -1888,7 +1888,7 @@ Defining Specific Disruptors
 Overview
 ++++++++
 
-Specific disruptors have to be implemented within ``mydf/strategy.py``. This file should
+Specific operators have to be implemented within ``mydf/strategy.py``. This file should
 starts with:
 
 .. code-block:: python
@@ -1902,50 +1902,50 @@ starts with:
 .. note::
    ``Fuddly`` registers for each data model the related
    dynamically-created generators, and if defined, specific
-   disruptors. For that purpose, an object
+   operators. For that purpose, an object
    :class:`fuddly.framework.tactics_helper.Tactics` has to be instantiated and
    referenced by the global variable ``tactics``.
 
-Then, to define a specific disruptor for your data model you basically
-have to define a subclass of :class:`fuddly.framework.tactics_helper.Disruptor`
-or :class:`fuddly.framework.tactics_helper.StatefulDisruptor`, and use the
-decorator ``@disruptor`` on it to register it. The first parameter of
+Then, to define a specific operator for your data model you basically
+have to define a subclass of :class:`fuddly.framework.tactics_helper.Operator`
+or :class:`fuddly.framework.tactics_helper.StatefulOperator`, and use the
+decorator ``@operator`` on it to register it. The first parameter of
 this decorator has to be the :class:`fuddly.framework.tactics_helper.Tactics`
 object you declare at the beginning of ``mydf/strategy.py``.
 
 .. code-block:: python
    :linenos:
 
-   @disruptor(tactics, dtype="DISRUPTOR_TYPE", weight=1)
-   class disruptor_name(Disruptor):
+   @operator(tactics, dtype="OPERATOR_TYPE", weight=1)
+   class operator_name(Operator):
 
-      def disrupt_data(self, dm, target, prev_data):
+      def transform_data(self, dm, target, prev_data):
 
            # Do something with prev_data
 
 	   return prev_data
           
 
-For stateful disruptor you also need to implement the method
-:meth:`fuddly.framework.tactics_helper.StatefulDisruptor.set_seed`. It will be called
-only when the disruptor needs a new data to consume. Thus, it will be
-called the very first time, and then each time the disruptor notify
+For stateful operator you also need to implement the method
+:meth:`fuddly.framework.tactics_helper.StatefulOperator.set_seed`. It will be called
+only when the operator needs a new data to consume. Thus, it will be
+called the very first time, and then each time the operator notify
 ``fuddly`` that it needs a new data to consume. This notification is
-done by calling :meth:`fuddly.framework.tactics_helper.StatefulDisruptor.handover`
-within :meth:`fuddly.framework.tactics_helper.StatefulDisruptor.disrupt_data`. The
-following code block illustrates such kind of disruptor:
+done by calling :meth:`fuddly.framework.tactics_helper.StatefulOperator.handover`
+within :meth:`fuddly.framework.tactics_helper.StatefulOperator.transform_data`. The
+following code block illustrates such kind of operator:
 
 .. code-block:: python
    :linenos:
    :emphasize-lines: 13, 14
 
-   @disruptor(tactics, dtype="DISRUPTOR_TYPE", weight=1)
-   class disruptor_name(StatefulDisruptor):
+   @operator(tactics, dtype="OPERATOR_TYPE", weight=1)
+   class operator_name(StatefulOperator):
 
       def set_seed(self, prev_data):
           self.seed_node = prev_data.content
 
-      def disrupt_data(self, dm, target, data):
+      def transform_data(self, dm, target, data):
           new_node = do_some_modification(self.seed_node)
           if new_node is None:
               data.make_unusable()
@@ -1962,26 +1962,26 @@ following code block illustrates such kind of disruptor:
    independent *container* (:class:`fuddly.framework.data.Data`) for
    passing modeled data from one sub-system to another. This container
    is also used, for logging purpose, to register the sequence of
-   modifications performed on the data (especially the disruptor
+   modifications performed on the data (especially the operator
    chain--- refer to :ref:`tuto:dmaker-chain`) and other things, such
-   as information retrieved from what a disruptor wants to report
+   as information retrieved from what a operator wants to report
    (line 14), for instance, insights on the modifications it
    performed.
 
-You can also define parameters for your disruptor, by specifying the
+You can also define parameters for your operator, by specifying the
 ``args`` attribute of the decorator with a dictionary. This dictionary
-references for each parameter of your disruptors a tuple composed of a
+references for each parameter of your operators a tuple composed of a
 description of the parameter, its default value, and the type of the
 value. The following example illustrates this use case, as well as the
-way to access the parameters within the disruptor methods.
+way to access the parameters within the operator methods.
 
 .. code-block:: python
    :linenos:
 
-   @disruptor(tactics, dtype="DISRUPTOR_TYPE", weight=1,
+   @operator(tactics, dtype="OPERATOR_TYPE", weight=1,
               args={'param_1': ('param_1 description', None, str),
 	            'param_2': ('param_2 description ', True, bool)})
-   class disruptor_name(StatefulDisruptor):
+   class operator_name(StatefulOperator):
 
       def set_seed(self, prev_data):
           do_stuff(self.param_1)
@@ -1994,7 +1994,7 @@ The Model Walker Infrastructure
 +++++++++++++++++++++++++++++++
 
 The model walker infrastructure can helps you if you want to define a
-stateful disruptor that performs operations on the provided data, for
+stateful operator that performs operations on the provided data, for
 each of its node (or for specific nodes of interest), one node at a
 time.
 
@@ -2016,9 +2016,9 @@ perform the intended modification on such nodes.
           have.
 
 	  Also, note that if you want to iterate on the different
-	  forms of a modeled data, you can use the disruptor ``tWALK``
+	  forms of a modeled data, you can use the operator ``tWALK``
 	  with the specific parameter ``nt_only`` set to
-	  ``True``. Refer to :ref:`dis:generic-disruptors`.
+	  ``True``. Refer to :ref:`dis:generic-operators`.
 
 Let's take the following generic consumer
 :class:`fuddly.framework.fuzzing_primitives.SeparatorDisruption`, that
@@ -2092,15 +2092,15 @@ snippet:
         print(root_node.to_bytes())
 
 
-If we put all things together, we can write our *separator* disruptor
-like this (which is a simpler version of the generic disruptor
+If we put all things together, we can write our *separator* operator
+like this (which is a simpler version of the generic operator
 :class:`fuddly.framework.generic_data_makers.d_fuzz_separator_nodes`):
 
 .. code-block:: python
    :linenos:
 
-   @disruptor(tactics, dtype="tSEP", weight=1)
-   class disruptor_name(StatefulDisruptor):
+   @operator(tactics, dtype="tSEP", weight=1)
+   class operator_name(StatefulOperator):
 
        def set_seed(self, prev_data):
            prev_data.content.get_value()
@@ -2113,7 +2113,7 @@ like this (which is a simpler version of the generic disruptor
            self.consumer = SeparatorDisruption()
            self.walker = iter(ModelWalker(prev_data.content, self.consumer))
 
-       def disrupt_data(self, dm, target, data):
+       def transform_data(self, dm, target, data):
            try:
                rnode, consumed_node, orig_node_val, idx = next(self.walker)
            except StopIteration:
@@ -2362,7 +2362,7 @@ the reference of the project as the first parameter.
 
 .. seealso:: Parameters can be defined for an director, in order to
              make it more customizable. The way to describe them is
-             the same as for *disruptors*. Look into the file
+             the same as for *operators*. Look into the file
              ``projects/generic/standard.py`` for some examples.
 
 Here under is presented a skeleton of a Director:
@@ -2425,20 +2425,20 @@ is given here under:
 
        return inst
 
-We instruct ``fuddly`` to execute a *disruptor chain* made of the
+We instruct ``fuddly`` to execute a *operator chain* made of the
 ``SEPARATOR`` *generator* (transparently created by ``fuddly`` from
 the eponymous data type in the data model ``mydf``) and the
-``tSTRUCT`` *disruptor* with some parameters (given through
+``tSTRUCT`` *operator* with some parameters (given through
 :class:`fuddly.framework.tactics_helpers.UI`). And we handle the case when the
 *chain* has been drained. More precisely, we decide to give up when
-``fuddly`` inform us that the stateful disruptor ``tSTRUCT`` has fully
+``fuddly`` inform us that the stateful operator ``tSTRUCT`` has fully
 consumed its input, and cannot provide more outputs without
-re-enabling a previous stateful disruptor or in our case the
+re-enabling a previous stateful operator or in our case the
 *generator* from the chain.
 
 .. seealso:: refer to :ref:`tuto:dmaker-chain` for information about
-             *disruptor chains*. And refer to :ref:`tuto:disruptors` for
-             insight into disruptors.
+             *operator chains*. And refer to :ref:`tuto:operators` for
+             insight into operators.
 
 Finally, the method
 :meth:`fuddly.framework.director_helpers.Director.do_after_all()` is executed

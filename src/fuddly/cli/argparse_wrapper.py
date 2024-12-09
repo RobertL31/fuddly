@@ -1,5 +1,5 @@
 import argparse
-from argparse import ArgumentTypeError
+from argparse import *
 import os
 
 

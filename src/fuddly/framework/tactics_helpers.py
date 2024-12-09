@@ -44,9 +44,9 @@ XT_RELATED_DM = 5
 class Tactics(object):
 
     def __init__(self):
-        self.disruptors = {}
+        self.operators = {}
         self.generators = {}
-        self.disruptor_clones = {}
+        self.operator_clones = {}
         self.generator_clones = {}
         self._fmkops = None
         self._related_dm = None
@@ -60,9 +60,9 @@ class Tactics(object):
                 attrs['obj'].set_exportable_fmk_ops(fmkops)
                 if self._related_dm:
                     attrs['obj'].related_dm_name = self._related_dm.name
-        for dtype in self.disruptor_types:
-            self.disruptors[dtype][XT_RELATED_DM] = related_dm
-            for name, attrs in self.get_disruptors_list(dtype).items():
+        for dtype in self.operator_types:
+            self.operators[dtype][XT_RELATED_DM] = related_dm
+            for name, attrs in self.get_operators_list(dtype).items():
                 attrs['obj'].set_exportable_fmk_ops(fmkops)
                 if self._related_dm:
                     attrs['obj'].related_dm_name = self._related_dm.name
@@ -93,12 +93,12 @@ class Tactics(object):
             else:
                 op_cls._args_desc = op_cls.args
             op_obj = op_cls()
-            if issubclass(op_cls, StatefulDisruptor):
+            if issubclass(op_cls, StatefulOperator):
                 op_obj.set_attr(DataMakerAttr.Controller)
             op_cls_name = op_cls.__class__.__name__
 
-            self.register_new_disruptor(op_cls_name, op_obj, weight=1, dmaker_type=op_type,
-                                        valid=valid)
+            self.register_new_operator(op_cls_name, op_obj, weight=1, dmaker_type=op_type,
+                                       valid=valid)
 
 
     def __register_new_data_maker(self, dict_var, name, obj, weight, dmaker_type, valid):
@@ -136,9 +136,9 @@ class Tactics(object):
                 dict_var[dmaker_type][XT_NAME_LIST_K][name]
 
 
-    def register_new_disruptor(self, name, obj, weight, dmaker_type, valid=False):
-        self.__register_new_data_maker(self.disruptors, name, obj,
-                                    weight, dmaker_type, valid)
+    def register_new_operator(self, name, obj, weight, dmaker_type, valid=False):
+        self.__register_new_data_maker(self.operators, name, obj,
+                                       weight, dmaker_type, valid)
 
     def register_new_generator(self, name, obj, weight, dmaker_type, valid=False):
         self.__register_new_data_maker(self.generators, name, obj,
@@ -198,25 +198,25 @@ class Tactics(object):
         self.__clear_dmaker_clones(self.generators, self.generator_clones)
         self.generator_clones = {}
 
-    def clone_disruptor(self, dmaker_type, new_dmaker_type=None, dmaker_name=None):
-        return self.__clone_dmaker(self.disruptors, self.disruptor_clones, dmaker_type, new_dmaker_type=new_dmaker_type,
-                                   dmaker_name=dmaker_name, register_func=self.register_new_disruptor)
+    def clone_operator(self, dmaker_type, new_dmaker_type=None, dmaker_name=None):
+        return self.__clone_dmaker(self.operators, self.operator_clones, dmaker_type, new_dmaker_type=new_dmaker_type,
+                                   dmaker_name=dmaker_name, register_func=self.register_new_operator)
 
-    def clear_disruptor_clones(self):
-        self.__clear_dmaker_clones(self.disruptors, self.disruptor_clones)
-        self.disruptor_clones = {}
+    def clear_operator_clones(self):
+        self.__clear_dmaker_clones(self.operators, self.operator_clones)
+        self.operator_clones = {}
 
     @property
     def generator_types(self):
         return self.generators.keys()
 
     @property
-    def disruptor_types(self):
-        return self.disruptors.keys()
+    def operator_types(self):
+        return self.operators.keys()
 
-    def get_disruptors_list(self, dmaker_type):
+    def get_operators_list(self, dmaker_type):
         try:
-            ret = self.disruptors[dmaker_type][XT_NAME_LIST_K]
+            ret = self.operators[dmaker_type][XT_NAME_LIST_K]
         except KeyError:
             return None
 
@@ -234,13 +234,13 @@ class Tactics(object):
         for gen_type, attrs in self.generators.items():
             yield gen_type, attrs[XT_RELATED_DM]
 
-    def disruptors_info(self):
-        for dis_type, attrs in self.disruptors.items():
+    def operators_info(self):
+        for dis_type, attrs in self.operators.items():
             yield dis_type, attrs[XT_RELATED_DM]
 
-    def get_disruptor_weight(self, dmaker_type, name):
+    def get_operator_weight(self, dmaker_type, name):
         try:
-            ret = self.disruptors[dmaker_type][XT_NAME_LIST_K][name]['weight']
+            ret = self.operators[dmaker_type][XT_NAME_LIST_K][name]['weight']
         except KeyError:
             return None
 
@@ -254,9 +254,9 @@ class Tactics(object):
 
         return ret
 
-    def get_disruptor_validness(self, dmaker_type, name):
+    def get_operator_validness(self, dmaker_type, name):
         try:
-            ret = self.disruptors[dmaker_type][XT_NAME_LIST_K][name]['valid']
+            ret = self.operators[dmaker_type][XT_NAME_LIST_K][name]['valid']
         except KeyError:
             return None
 
@@ -272,8 +272,8 @@ class Tactics(object):
 
 
     def get_info_from_obj(self, obj):
-        for dmaker_type in self.disruptors:
-            for name, info in self.disruptors[dmaker_type][XT_NAME_LIST_K].items():
+        for dmaker_type in self.operators:
+            for name, info in self.operators[dmaker_type][XT_NAME_LIST_K].items():
                 if info['obj'] is obj:
                     return dmaker_type, name
 
@@ -285,9 +285,9 @@ class Tactics(object):
         return None, None
 
 
-    def get_disruptor_obj(self, dmaker_type, name):
+    def get_operator_obj(self, dmaker_type, name):
         try:
-            ret = self.disruptors[dmaker_type][XT_NAME_LIST_K][name]['obj']
+            ret = self.operators[dmaker_type][XT_NAME_LIST_K][name]['obj']
         except KeyError:
             return None
 
@@ -302,9 +302,9 @@ class Tactics(object):
         return ret
 
 
-    def get_disruptor_name(self, dmaker_type, obj):
+    def get_operator_name(self, dmaker_type, obj):
         try:
-            ret = self.disruptors[dmaker_type][XT_CLS_LIST_K][obj]
+            ret = self.operators[dmaker_type][XT_CLS_LIST_K][obj]
         except KeyError:
             return None
 
@@ -334,8 +334,8 @@ class Tactics(object):
 
         return True
 
-    def set_disruptor_weight(self, dmaker_type, name, weight):
-        return self.__set_data_maker_weight(self.disruptors, dmaker_type, name, weight)
+    def set_operator_weight(self, dmaker_type, name, weight):
+        return self.__set_data_maker_weight(self.operators, dmaker_type, name, weight)
 
     def set_generator_weight(self, dmaker_type, name, weight):
         return self.__set_data_maker_weight(self.generators, dmaker_type, name, weight)
@@ -343,7 +343,7 @@ class Tactics(object):
 
     def get_dmaker_type_total_weight(self, dmaker_type):
         try:
-            ret = self.disruptors[dmaker_type][XT_WEIGHT_K]
+            ret = self.operators[dmaker_type][XT_WEIGHT_K]
         except KeyError:
             return None
 
@@ -376,15 +376,15 @@ class Tactics(object):
             return obj
 
 
-    def get_random_disruptor(self, dmaker_type, valid):
-        if dmaker_type not in self.disruptors:
+    def get_random_operator(self, dmaker_type, valid):
+        if dmaker_type not in self.operators:
             return None
         if valid:
-            if len(self.disruptors[dmaker_type][XT_VALID_CLS_LIST_K]) == 0:
+            if len(self.operators[dmaker_type][XT_VALID_CLS_LIST_K]) == 0:
                 return None
 
-        return self.__get_random_data_maker(self.disruptors, dmaker_type,
-                                         self.get_dmaker_type_total_weight(dmaker_type), valid)
+        return self.__get_random_data_maker(self.operators, dmaker_type,
+                                            self.get_dmaker_type_total_weight(dmaker_type), valid)
 
     def get_random_generator(self, dmaker_type, valid):
         if dmaker_type not in self.generators:
@@ -397,13 +397,13 @@ class Tactics(object):
                                          self.get_datatype_total_weight(dmaker_type), valid)
 
 
-    def print_disruptor(self, dmaker_type, disruptor_name):
-        print("### Register Disruptor ###\n" +
+    def print_operator(self, dmaker_type, operator_name):
+        print("### Register Operator ###\n" +
               " |_ type: %s\n" % dmaker_type +
               "     \\_ total weight: %d\n" % self.get_dmaker_type_total_weight(dmaker_type) +
-              " |_ name: %s\n" % disruptor_name +
-              " |_ weight: %d\n" % self.get_disruptor_weight(dmaker_type, disruptor_name) +
-              " \\_ valid data: %r\n" % self.get_disruptor_validness(dmaker_type, disruptor_name)
+              " |_ name: %s\n" % operator_name +
+              " |_ weight: %d\n" % self.get_operator_weight(dmaker_type, operator_name) +
+              " \\_ valid data: %r\n" % self.get_operator_validness(dmaker_type, operator_name)
               )
 
     def print_generator(self, dmaker_type, generator_name):
@@ -485,7 +485,7 @@ def modelwalker_inputs_handling_helper(dmaker):
     dmaker.max_runs_per_node = dmaker.max_node_tc
     dmaker.min_runs_per_node = dmaker.min_node_tc
 
-### Generator & Disruptor
+### Generator & Operator
 
 class DataMakerAttr:
     Active = 1
@@ -1042,7 +1042,7 @@ class DynGeneratorFromScenario(Generator):
         self._cleanup_walking_attrs()
 
 
-class Disruptor(DataMaker):
+class Operator(DataMaker):
 
     op_type = None
     valid = None
@@ -1057,7 +1057,7 @@ class Disruptor(DataMaker):
             DataMakerAttr.SetupRequired: True
             }
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         raise NotImplementedError
 
     def setup(self, dm, user_input):
@@ -1090,7 +1090,7 @@ class Disruptor(DataMaker):
 
 
     def _setup(self, dm, user_input):
-        # sys.stdout.write("\n__ setup disruptor '%s' __" % self.__class__.__name__)
+        # sys.stdout.write("\n__ setup operator '%s' __" % self.__class__.__name__)
         self.clear_attr(DataMakerAttr.SetupRequired)
         if not _user_input_conformity(self, user_input, self._args_desc):
             return False
@@ -1109,14 +1109,14 @@ class Disruptor(DataMaker):
 
 
     def _cleanup(self):
-        # sys.stdout.write("\n__ cleanup disruptor '%s' __" % self.__class__.__name__)
+        # sys.stdout.write("\n__ cleanup operator '%s' __" % self.__class__.__name__)
         self.set_attr(DataMakerAttr.SetupRequired)
         self.set_attr(DataMakerAttr.Active)
         self.cleanup(self._fmkops)
 
 
 
-class StatefulDisruptor(DataMaker):
+class StatefulOperator(DataMaker):
 
     op_type = None
     valid = None
@@ -1135,15 +1135,15 @@ class StatefulDisruptor(DataMaker):
     def set_seed(self, prev_data):
         raise NotImplementedError
 
-    def disrupt_data(self, dm, target, data):
+    def transform_data(self, dm, target, data):
         '''
-        @data: it is either equal to prev_data the first time disrupt_data()
-        is called by the FMK, or it is a an empty data (that is Data()).
+        @data: it is either equal to prev_data the first time transform_data()
+        is called by the FMK, or it is an empty data (that is Data()).
         '''
         raise NotImplementedError
 
     def handover(self):
-        # sys.stdout.write("\n__ disruptor handover '%s' __" % self.__class__.__name__)
+        # sys.stdout.write("\n__ operator handover '%s' __" % self.__class__.__name__)
         self.set_attr(DataMakerAttr.HandOver)
         self.set_attr(DataMakerAttr.SetupRequired)
         self.set_attr(DataMakerAttr.NeedSeed)
@@ -1178,7 +1178,7 @@ class StatefulDisruptor(DataMaker):
         return self.__attrs[name]
 
     def _setup(self, dm, user_input):
-        # sys.stdout.write("\n__ setup disruptor '%s' __" % self.__class__.__name__)
+        # sys.stdout.write("\n__ setup operator '%s' __" % self.__class__.__name__)
         self.clear_attr(DataMakerAttr.SetupRequired)
         if not _user_input_conformity(self, user_input, self._args_desc):
             return False
@@ -1196,7 +1196,7 @@ class StatefulDisruptor(DataMaker):
         return ok
 
     def _cleanup(self):
-        # sys.stdout.write("\n__ cleanup disruptor '%s' __" % self.__class__.__name__)
+        # sys.stdout.write("\n__ cleanup operator '%s' __" % self.__class__.__name__)
         self.set_attr(DataMakerAttr.SetupRequired)
         self.set_attr(DataMakerAttr.NeedSeed)
         self.set_attr(DataMakerAttr.Active)
@@ -1209,24 +1209,24 @@ class StatefulDisruptor(DataMaker):
             return ret
 
 
-def disruptor(st, dtype, weight=1, valid=False, args=None, modelwalker_user=False):
-    def internal_func(disruptor_cls):
-        disruptor_cls._modelwalker_user = modelwalker_user
+def operator(st, dtype, weight=1, valid=False, args=None, modelwalker_user=False):
+    def internal_func(operator_cls):
+        operator_cls._modelwalker_user = modelwalker_user
         if modelwalker_user:
             if set(GENERIC_ARGS.keys()).intersection(set(args.keys())):
                 raise ValueError('At least one parameter is in conflict with a built-in parameter')
-            disruptor_cls._args_desc = copy.copy(GENERIC_ARGS)
+            operator_cls._args_desc = copy.copy(GENERIC_ARGS)
             if args:
-                disruptor_cls._args_desc.update(args)
+                operator_cls._args_desc.update(args)
         else:
-            disruptor_cls._args_desc = {} if args is None else args
+            operator_cls._args_desc = {} if args is None else args
         # register an object of this class
-        disruptor = disruptor_cls()
-        if issubclass(disruptor_cls, StatefulDisruptor):
-            disruptor.set_attr(DataMakerAttr.Controller)
-        st.register_new_disruptor(disruptor.__class__.__name__, disruptor, weight, dtype, valid)
+        operator = operator_cls()
+        if issubclass(operator_cls, StatefulOperator):
+            operator.set_attr(DataMakerAttr.Controller)
+        st.register_new_operator(operator.__class__.__name__, operator, weight, dtype, valid)
 
-        return disruptor_cls
+        return operator_cls
 
     return internal_func
 

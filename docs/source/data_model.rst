@@ -99,7 +99,7 @@ qty
   (:const:`fuddly.framework.node.NodeInternals_NonTerm.INFINITY_LIMIT`)
   is set to avoid getting unintended too big data. If you intend to
   get such kind of data, specify explicitly the maximum, or use a
-  disruptor to do so (:ref:`tuto:disruptors`).
+  operator to do so (:ref:`tuto:operators`).
 
 default_qty
   Specify the default amount of nodes to generate from the description.
@@ -161,7 +161,7 @@ custo_set, custo_clear
     (refer to ``qty`` attribute), all instances will be set as *mutable*.
     If it is disabled, when a child node is instantiated more
     than once, only the first instance is set *mutable*, the others
-    have this attribute cleared to prevent generic disruptors from
+    have this attribute cleared to prevent generic operators from
     altering them. This mode aims at limiting the number of test
     cases, by pruning what is assumed to be redundant.
 
@@ -191,7 +191,7 @@ custo_set, custo_clear
     .. note::
 		Note that if the node is not frozen
 		at the time of the copy, this customization won't have any effect. The main interest is
-		in conjunction with the *disruptors* (like ``tTYPE``, ``tWALK``, ...) which are based on the
+		in conjunction with the *operators* (like ``tTYPE``, ``tWALK``, ...) which are based on the
 		``ModelWalker`` infrastructure  (refer to :ref:`tuto:modelwalker`). Indeed, this infrastructure
 		releases constraints on non-terminal nodes before providing a new model instance. Releasing
 		constraints triggers child nodes reconstruction for each non-terminal. And as the terminal
@@ -467,8 +467,8 @@ encoder
 
   .. seealso:: Refer to :ref:`dm:pattern:encoder` for an example on how to use this keyword.
 
-  .. note:: Depending on your needs, you could also choose to implement a disruptor
-     to perform your encoding (refer to :ref:`tuto:disruptors`).
+  .. note:: Depending on your needs, you could also choose to implement a operator
+     to perform your encoding (refer to :ref:`tuto:operators`).
 
 
 Keywords to Describe Generator Node
@@ -547,10 +547,10 @@ set_attrs
     *function* node, if it needs to be recomputed each time a
     modification has been performed on its associated graph (e.g., CRC
     function).
-  - ``MH.Attr.Mutable``: If set, generic disruptors will consider the
+  - ``MH.Attr.Mutable``: If set, generic operators will consider the
     node as being mutable, meaning that it can be altered (default
     behavior). Otherwise, it will be ignored.
-    When a non-terminal node has this attribute, generic disruptors using
+    When a non-terminal node has this attribute, generic operators using
     the ModelWalker algorithm (like ``tWALK`` and ``tTYPE``) will stick to
     its default form (meaning default quantity will be used for each subnodes
     and if the node has multiple shapes, the higher weighted one will be used.
@@ -567,14 +567,14 @@ set_attrs
     node. Refer to :ref:`tuto:dm-absorption` for more information on
     that topic.
   - ``MH.Attr.Separator``: Used to distinguish a separator. Some
-    disruptors can leverage this attribute to perform their
+    operators can leverage this attribute to perform their
     alteration.
   - ``MH.Attr.Highlight``: If set, make the framework display the node in color
-    when printed on the console. This attribute is also used by some disruptors to show the
+    when printed on the console. This attribute is also used by some operators to show the
     location of their modification.
 
   .. note::
-     Most of the generic stateful disruptors will recursively
+     Most of the generic stateful operators will recursively
      set the attributes ``MH.Attr.Determinist`` and ``MH.Attr.Finite``
      on the provided data before performing any alteration.
 
@@ -609,7 +609,7 @@ semantics
   topic.
 
 fuzz_weight
-  Used by some stateful disruptors to order their test cases. The
+  Used by some stateful operators to order their test cases. The
   heavier the weight, the higher the priority of handling the node.
 
 sync_qty_with
@@ -698,8 +698,8 @@ post_freeze
 
 specific_fuzzy_vals
   Usable for *typed-nodes* only. This keyword allows to specify a list of additional values to
-  be leveraged by the *disruptor* ``tTYPE`` (:ref:`dis:ttype`) while dealing with the related node.
-  These additional values are added to the test cases planned by the *disruptor* (if not already
+  be leveraged by the *operator* ``tTYPE`` (:ref:`dis:ttype`) while dealing with the related node.
+  These additional values are added to the test cases planned by the *operator* (if not already
   planned).
 
 charset
@@ -746,10 +746,10 @@ supports different parameters that allows to more accurately specify a
 data model, which enables ``fuddly`` to perform more enhanced fuzzing.
 
 .. note:: These parameters will be especially leveraged by the generic
-   disruptor ``tTYPE``
+   operator ``tTYPE``
    (:class:`fuddly.framework.generic_data_makers.d_fuzz_typed_nodes`). Refer to
-   :ref:`dis:generic-disruptors` for more information on it, and to
-   :ref:`tuto:disruptors`, for how to create your own *disruptors*.
+   :ref:`dis:generic-operators` for more information on it, and to
+   :ref:`tuto:operators`, for how to create your own *operators*.
 
 
 .. _vt:integer:
@@ -792,7 +792,7 @@ All these parameters are optional. If you don't specify all of them
 the constructor will let more freedom within the data model. But if
 you have accurate information, don't hesitate to add them in the data
 model, as it does not weaken the test cases that will be generated by
-the generic disruptors, quite the opposite.
+the generic operators, quite the opposite.
 
 Below the different currently defined integer types, and the
 corresponding outputs for a data generated from them:
@@ -886,7 +886,7 @@ following parameters:
 ``extra_fuzzy_list`` [optional, default value: **None**]
   During data generation, if this parameter is specified with some
   specific values, they will be part of the test cases generated by
-  the generic disruptor tTYPE.
+  the generic operator tTYPE.
 
 ``absorb_regexp`` [optional, default value: **None**]
   You can specify a regular expression in this parameter as a
@@ -926,7 +926,7 @@ that enables to handle transparently any encoding scheme:
    with your encoder class in parameter.
    Additionally, you can overload :meth:`fuddly.framework.value_types.String.encoding_test_cases` if you want
    to implement specific test cases related to your encoding. They will be automatically added to
-   the set of test cases to be triggered by the disruptor ``tTYPE``.
+   the set of test cases to be triggered by the operator ``tTYPE``.
 
    Note that the encoder you defined can also be used by a non-terminal node (refer to :ref:`dm:pattern:encoder`).
 
@@ -935,7 +935,7 @@ Below the different currently defined string types:
 
 - :class:`fuddly.framework.value_types.String`: General purpose character string.
 - :class:`fuddly.framework.value_types.Filename`: Filename. Similar to the type
-  ``String``, but some disruptors like ``tTYPE`` will generate more specific
+  ``String``, but some operators like ``tTYPE`` will generate more specific
   test cases.
 - :class:`fuddly.framework.value_types.FolderPath`: FolderPath. Similar to the type
   ``Filename``, but generated test cases are slightly different.
@@ -1003,7 +1003,7 @@ parameters:
   time". The rationale is that in most cases, computing all
   combinations does not make sense, especially for fuzzing
   purpose. Additionally, note that such nominal generation are not the
-  one used by the generic disruptor ``tTYPE`` which rely on
+  one used by the generic operator ``tTYPE`` which rely on
   ``BitField`` *fuzzy mode* (reachable through
   :func:`fuddly.framework.value_types.VT_Alt.enable_fuzz_mode`).
 
@@ -1085,13 +1085,13 @@ the first example. We additionally specify the parameter
 
 .. seealso:: Methods are defined to help for modifying a
              :class:`fuddly.framework.value_types.BitField`. If you want to
-             deal with ``BitField`` in your specific disruptors, take
+             deal with ``BitField`` in your specific operators, take
              a look especially at:
 
              - :func:`fuddly.framework.value_types.BitField.set_subfield`, :func:`fuddly.framework.value_types.BitField.get_subfield`
              - :func:`fuddly.framework.value_types.BitField.extend_right`
              - :func:`fuddly.framework.value_types.BitField.reset_state`, :func:`fuddly.framework.value_types.BitField.rewind`
-             - :func:`fuddly.framework.value_types.VT_Alt.enable_fuzz_mode` (used currently by the disruptor ``tTYPE``)
+             - :func:`fuddly.framework.value_types.VT_Alt.enable_fuzz_mode` (used currently by the operator ``tTYPE``)
 
 
 Helpers
@@ -1334,9 +1334,9 @@ node to ``0`` (line 21), and it will be considered as an optional
 part.
 
 If you iterate over this data model with ``tWALK(nt_ony=True)`` (refer
-to :ref:`dis:generic-disruptors`) you will see the various data forms
+to :ref:`dis:generic-operators`) you will see the various data forms
 understood by ``fuddly`` which would be leveraged by most of the
-generic stateful disruptors.
+generic stateful operators.
 
 .. code-block:: none
 
@@ -1356,7 +1356,7 @@ Finally, the third form is from the ``SHAPE 2``.
 
 .. seealso:: Refer to :ref:`tuto:modelwalker` for more information on
              the *Model Walker* infrastructure which makes really easy
-             the implementation of stateful disruptors leveraging the
+             the implementation of stateful operators leveraging the
              different forms of a data.
 
 .. seealso:: Refer to :ref:`dm:pattern:existence-cond` if you need
@@ -1439,7 +1439,7 @@ From this data model you could get a data like that:
           ``absorb_regexp`` parameter in line 13).
 
 .. note:: You can also perform specific *separator mutation* within a
-          disruptor (refer to :ref:`tuto:disruptors`), as separator nodes have
+          operator (refer to :ref:`tuto:operators`), as separator nodes have
           the specific attribute
           :const:`fuddly.framework.node.NodeInternals.Separator` set.
 
@@ -1670,7 +1670,7 @@ for more complex situation.
 .. seealso:: Look at the example :ref:`ex:zip-mod` to see how to
    change the node configuration before absorption. And for more
    insights on that topic refer to :ref:`data-model` and
-   :ref:`tuto:disruptors`.
+   :ref:`tuto:operators`.
 
 
 Finally, let's take the following example that illustrates other
@@ -1831,11 +1831,11 @@ on the encoded form or the decoded form of their node parameters.
      ]}
 
 This data description will enable you to produce data compliant to the specified encoding schemes
-in a transparent way. Additionally, any fuzzing operations (:ref:`tuto:disruptors`) you want to
+in a transparent way. Additionally, any fuzzing operations (:ref:`tuto:operators`) you want to
 perform on any data parts will be done *before* any encoding takes place.
 
 If you want to perform some fuzzing on the encoding scheme itself you will have first to
-describe its format. Then it boils down to run some generic disruptors on them or some of your own.
+describe its format. Then it boils down to run some generic operators on them or some of your own.
 However, note that some value types that support encoding (refer to :ref:`vt:value-types`) embed
 specific test cases on the encoding scheme (which is the case for ``utf-16-le``-encoded strings
 for instance).

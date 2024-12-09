@@ -45,15 +45,15 @@ POPULATION - Generator for Evolutionary Fuzzing
 This generator is used only internally by the evolutionary fuzzing infrastructure.
 
 
-.. _dis:generic-disruptors:
+.. _dis:generic-operators:
 
-Generic Disruptors
+Generic Operators
 ==================
 
-The current generic disruptors are presented within the following
+The current generic operators are presented within the following
 sections.
 
-Stateful Disruptors
+Stateful Operators
 -------------------
 
 .. _dis:ttype:
@@ -74,7 +74,7 @@ Description:
   If the input has different shapes (described in non-terminal nodes), this will be taken into
   account by fuzzing every shape combinations.
 
-  Note: this disruptor includes what tSEP does and goes beyond with respect to separators.
+  Note: this operator includes what tSEP does and goes beyond with respect to separators.
 
 Reference:
   :class:`fuddly.framework.generic_data_makers.sd_fuzz_typed_nodes`
@@ -99,15 +99,15 @@ Parameters:
         |      | default: -1 [type: int]
         |_ clone_node
         |      | desc: if True, this operator will always return a copy of the node. (for
-        |      |       stateless disruptors dealing with big data it can be useful
+        |      |       stateless operators dealing with big data it can be useful
         |      |       to it to False)
         |      | default: True [type: bool]
         |_ path
-        |      | desc: Graph path regexp to select nodes on which the disruptor should
+        |      | desc: Graph path regexp to select nodes on which the operator should
         |      |       apply
         |      | default: None [type: str]
         |_ sem
-        |      | desc: Semantics to select nodes on which the disruptor should apply.
+        |      | desc: Semantics to select nodes on which the operator should apply.
         |      | default: None [type: str, list]
         |_ deep
         |      | desc: When set to True, if a node structure has changed, the modelwalker
@@ -149,7 +149,7 @@ Parameters:
         |      |       way. Otherwise, if it is set to 'None', it will be guided by
         |      |       the data model determinism. Note: this option is complementary
         |      |       to 'determinism' as it acts on the typed node substitutions
-        |      |       that occur through this disruptor
+        |      |       that occur through this operator
         |      | default: True [type: bool]
         |_ leaf_determinism
         |      | desc: If set to 'True', all the typed nodes of the model will be set
@@ -207,18 +207,18 @@ Parameters:
          |      | desc: maximum number of steps (-1 means until the end)
          |      | default: -1 [type: int]
          |_ path
-         |      | desc: graph path regexp to select nodes on which the disruptor should
+         |      | desc: graph path regexp to select nodes on which the operator should
          |      |       apply
          |      | default: None [type: str]
          |_ sem
-         |      | desc: Semantics to select nodes on which the disruptor should apply.
+         |      | desc: Semantics to select nodes on which the operator should apply.
          |      | default: None [type: str, list]
          |_ deep
          |      | desc: if True, enable corruption of non-terminal node internals
          |      | default: False [type: bool]
 
 Usage Example:
-   A typical *disruptor chain* for leveraging this disruptor could be:
+   A typical *operator chain* for leveraging this operator could be:
 
    .. code-block:: none
 
@@ -229,7 +229,7 @@ Usage Example:
              ``opcode`` node path.
 
    .. seealso:: Refer to :ref:`tuto:dmaker-chain` for insight
-        into *disruptor chains*.
+        into *operator chains*.
 
 
 
@@ -248,7 +248,7 @@ Parameters:
 
          |_ clone_node
          |      | desc: if True, this operator will always return a copy of the node. (for
-         |      |       stateless disruptors dealing with big data it can be useful
+         |      |       stateless operators dealing with big data it can be useful
          |      |       to it to False)
          |      | default: True [type: bool]
          |_ init
@@ -322,7 +322,7 @@ Parameters:
 
          |_ clone_node
          |      | desc: if True, this operator will always return a copy of the node. (for
-         |      |       stateless disruptors dealing with big data it can be useful
+         |      |       stateless operators dealing with big data it can be useful
          |      |       to it to False)
          |      | default: True [type: bool]
          |_ init
@@ -341,11 +341,11 @@ Parameters:
          |      |       than 1.
          |      | default: -1 [type: int]
          |_ path
-         |      | desc: graph path regexp to select nodes on which the disruptor should
+         |      | desc: graph path regexp to select nodes on which the operator should
          |      |       apply
          |      | default: None [type: str]
          |_ sem
-         |      | desc: Semantics to select nodes on which the disruptor should apply.
+         |      | desc: Semantics to select nodes on which the operator should apply.
          |      | default: None [type: str, list]
          |_ order
          |      | desc: when set to True, the fuzzing order is strictly guided by the
@@ -365,7 +365,7 @@ tWALK - Walk Through a Data Model
 Description:
   Walk through the provided data and for each visited node, iterates
   over the allowed values (with respect to the data model).  Note: *no
-  alteration* is performed by this disruptor.
+  alteration* is performed by this operator.
 
 Reference:
   :class:`fuddly.framework.generic_data_makers.sd_walk_data_model`
@@ -375,7 +375,7 @@ Parameters:
 
         |_ clone_node
         |      | desc: if True, this operator will always return a copy of the node. (for
-        |      |       stateless disruptors dealing with big data it can be useful
+        |      |       stateless operators dealing with big data it can be useful
         |      |       to it to False)
         |      | default: True [type: bool]
         |_ init
@@ -394,11 +394,11 @@ Parameters:
         |      |       than 1.
         |      | default: -1 [type: int]
         |_ path
-        |      | desc: graph path regexp to select nodes on which the disruptor should
+        |      | desc: graph path regexp to select nodes on which the operator should
         |      |       apply
         |      | default: None [type: str]
         |_ sem
-        |      | desc: Semantics to select nodes on which the disruptor should apply.
+        |      | desc: Semantics to select nodes on which the operator should apply.
         |      | default: None [type: str, list]
         |_ full_combinatory
         |      | desc: When set to True, enable full-combinatory mode for non-terminal
@@ -460,11 +460,11 @@ Parameters:
     |      | default: True [type: bool]
     |_ notify_exhaustion
     |      | desc: When all the solutions of the CSP have been walked through,
-    |      |       the disruptor will notify it if this parameter is set to True.
+    |      |       the operator will notify it if this parameter is set to True.
     |      | default: True [type: bool]
 
 
-Stateless Disruptors
+Stateless Operators
 --------------------
 
 ADD - Add Data Within a Node
@@ -480,7 +480,7 @@ Parameters:
   .. code-block:: none
 
         |_ path
-        |      | desc: Graph path to select the node on which the disruptor should
+        |      | desc: Graph path to select the node on which the operator should
         |      |       apply.
         |      | default: None [type: str]
         |_ after
@@ -515,7 +515,7 @@ Parameters:
   .. code-block:: none
 
         |_ path
-        |      | desc: Graph path regexp to select nodes on which the disruptor should
+        |      | desc: Graph path regexp to select nodes on which the operator should
         |      |       apply.
         |      | default: None [type: str]
         |_ op
@@ -531,7 +531,7 @@ Parameters:
         |      | default: () [type: tuple]
         |_ clone_node
         |      | desc: If True the dmaker will always return a copy of the node. (For
-        |      |       stateless disruptors dealing with big data it can be useful
+        |      |       stateless operators dealing with big data it can be useful
         |      |       to set it to False.)
         |      | default: False [type: bool]
 
@@ -555,11 +555,11 @@ Parameters:
   .. code-block:: none
 
         |_ path
-        |      | desc: Graph path regexp to select nodes on which the disruptor should
+        |      | desc: Graph path regexp to select nodes on which the operator should
         |      |       apply.
         |      | default: None [type: str]
         |_ sem
-        |      | desc: Semantics to select nodes on which the disruptor should apply.
+        |      | desc: Semantics to select nodes on which the operator should apply.
         |      | default: None [type: str, list]
         |_ value
         |      | desc: The new value to inject within the data.
@@ -580,7 +580,7 @@ Parameters:
         |      | default: False [type: bool]
         |_ clone_node
         |      | desc: If True the dmaker will always return a copy of the node. (For
-        |      |       stateless disruptors dealing with big data it can be useful
+        |      |       stateless operators dealing with big data it can be useful
         |      |       to set it to False.)
         |      | default: False [type: bool]
 
@@ -590,7 +590,7 @@ CALL - Call Function
 
 Description:
     Call the function provided with the first parameter being the :class:`fuddly.framework.data.Data`
-    object received as input of this disruptor, and optionally with additional parameters
+    object received as input of this operator, and optionally with additional parameters
     if `params` is set. The function should return a :class:`fuddly.framework.data.Data` object.
 
     The signature of the function should be compatible with:
@@ -630,16 +630,16 @@ Parameters:
   .. code-block:: none
 
       |_ path
-      |      | desc: graph path regexp to select nodes on which the disruptor should
+      |      | desc: graph path regexp to select nodes on which the operator should
       |      |       apply
       |      | default: None [type: str]
       |_ clone_node
       |      | desc: if True, this operator will always return a copy of the node. (for
-      |      |       stateless disruptors dealing with big data it can be useful
+      |      |       stateless operators dealing with big data it can be useful
       |      |       to it to False)
       |      | default: False [type: bool]
       |_ recursive
-      |      | desc: apply the disruptor recursively
+      |      | desc: apply the operator recursively
       |      | default: True [type: str]
 
 
@@ -664,12 +664,12 @@ Parameters:
   .. code-block:: none
 
       |_ path
-      |      | desc: graph path regexp to select nodes on which the disruptor should
+      |      | desc: graph path regexp to select nodes on which the operator should
       |      |       apply
       |      | default: None [type: str]
       |_ clone_node
       |      | desc: if True, this operator will always return a copy of the node. (for
-      |      |       stateless disruptors dealing with big data it can be useful
+      |      |       stateless operators dealing with big data it can be useful
       |      |       to it to False)
       |      | default: False [type: bool]
 
@@ -687,7 +687,7 @@ Parameters:
   .. code-block:: none
 
          |_ path
-         |      | desc: graph path regexp to select nodes on which the disruptor should
+         |      | desc: graph path regexp to select nodes on which the operator should
          |      |       apply
          |      | default: None [type: str]
          |_ recursive
@@ -714,7 +714,7 @@ Parameters:
   .. code-block:: none
 
          |_ path
-         |      | desc: graph path regexp to select nodes on which the disruptor should
+         |      | desc: graph path regexp to select nodes on which the operator should
          |      |       apply
          |      | default: None [type: str]
          |_ nb
@@ -765,7 +765,7 @@ Parameters:
   .. code-block:: none
 
          |_ path
-         |      | desc: graph path regexp to select nodes on which the disruptor should
+         |      | desc: graph path regexp to select nodes on which the operator should
          |      |       apply
          |      | default: None [type: str]
          |_ cmd
@@ -793,7 +793,7 @@ Parameters:
          |      | desc: truncate the data (or part of the data) to the provided size
          |      | default: 10 [type: int]
          |_ path
-         |      | desc: graph path regexp to select nodes on which the disruptor should
+         |      | desc: graph path regexp to select nodes on which the operator should
          |      |       apply
          |      | default: None [type: str]
 
@@ -802,7 +802,7 @@ STRUCT - Shake Up Data Structure
 ++++++++++++++++++++++++++++++++
 
 Description:
-  Disrupt the data model structure (replace ordered sections by
+  Alter the data model structure (replace ordered sections by
   unordered ones).
 
 Reference:
@@ -812,7 +812,7 @@ Parameters:
   .. code-block:: none
 
          |_ path
-         |      | desc: graph path regexp to select nodes on which the disruptor should
+         |      | desc: graph path regexp to select nodes on which the operator should
          |      |       apply
          |      | default: None [type: str]
 
@@ -829,5 +829,5 @@ Reference:
   :class:`fuddly.framework.generic_data_makers.d_shallow_copy`
 
 .. note:: Random seeds are generally set while loading the data
-          model. This disruptor enables you to reset the seeds for the
+          model. This operator enables you to reset the seeds for the
           input data.

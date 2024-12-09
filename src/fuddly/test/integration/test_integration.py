@@ -1030,7 +1030,7 @@ class TestMisc(unittest.TestCase):
                 print('  current fuzzed node:     %s' % current_path)
                 prev_path = current_path
                 vt = node.cc.get_value_type()
-                print('  node value type (changed by disruptor):        ', vt)
+                print('  node value type (changed by operator):        ', vt)
                 if issubclass(vt.__class__, VT_Alt):
                     print('  |- node fuzzy mode:        ', vt._fuzzy_mode)
                 print('  node value type determinist:        ', vt.determinist)
@@ -4400,19 +4400,19 @@ class TestFMK(unittest.TestCase):
         fmk.reload_all(tg_ids=[0])
         fmk.prj.reset_target_mappings()
 
-    def test_generic_disruptors_01(self):
+    def test_generic_operators_01(self):
         dmaker_type = 'TESTNODE'
         # fmk.cleanup_dmaker(dmaker_type=dmaker_type, reset_existing_seed=True)
 
-        gen_disruptors = fmk._generic_tactics.disruptor_types
-        print('\n-=[ GENERIC DISRUPTORS ]=-\n')
-        print(gen_disruptors)
+        gen_operators = fmk._generic_tactics.operator_types
+        print('\n-=[ GENERIC OPERATORS ]=-\n')
+        print(gen_operators)
 
-        for dis in gen_disruptors:
+        for dis in gen_operators:
             if dis in ['CROSS']:
                 continue
 
-            print("\n\n---[ Tested Disruptor %r ]---" % dis)
+            print("\n\n---[ Tested Operator %r ]---" % dis)
             if dis == 'EXT':
                 act = [dmaker_type, (dis, UI(cmd='/bin/cat', file_mode=True))]
                 d = fmk.process_data(act)
@@ -4429,7 +4429,7 @@ class TestFMK(unittest.TestCase):
 
         fmk.cleanup_all_dmakers(reset_existing_seed=True)
 
-    def test_separator_disruptor(self):
+    def test_separator_operator(self):
         for i in range(100):
             d = fmk.process_data(['SEPARATOR', 'tSEP'])
             if d is None:
@@ -4439,7 +4439,7 @@ class TestFMK(unittest.TestCase):
 
         self.assertGreater(i, 2)
 
-    def test_struct_disruptor(self):
+    def test_struct_operator(self):
 
         idx = 0
         expected_idx = 6
@@ -4488,7 +4488,7 @@ class TestFMK(unittest.TestCase):
 
         self.assertEqual(idx, expected_idx)
 
-    def test_typednode_disruptor(self):
+    def test_typednode_operator(self):
 
         idx = 0
         expected_idx = 13

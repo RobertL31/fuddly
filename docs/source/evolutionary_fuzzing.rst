@@ -71,7 +71,7 @@ or if a maximum number of generation exceeds.
   in order to avoid its premature extinction.
 * :meth:`_compute_probability_of_survival()`: simply normalize fitness scores between 0 and 1.
 * :meth:`_kill()`: rolls the dices !
-* :meth:`_mutate()`: operates three bit flips on each individual using the stateless disruptor ``C``.
+* :meth:`_mutate()`: operates three bit flips on each individual using the stateless operator ``C``.
 * :meth:`_crossover()`: compensates the kills through the use of a crossover algorithm which
   is configurable.
 
@@ -115,7 +115,7 @@ It expects the following parameters:
 - The first one describe the process to follow to generate the data in the initial population
   (refer to the API documentation for more information). In the example,
   the process enables to generate altered data from the data type ``exist_cond`` thanks to the
-  the disruptors ``tTYPE`` and ``tSTRUCT``.
+  the operators ``tTYPE`` and ``tSTRUCT``.
 - The second specify the maximum size of the population.
 - The third is a criteria to stop the evolutionary process. It provides the maximum number of generation to reach
 - The fourth is the crossover algorithm to be used. You can either provide your own implementation

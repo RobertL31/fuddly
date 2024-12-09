@@ -60,7 +60,7 @@ def tag_builder(tag_name, params=None, refs=None, contents=None, node_name=None,
       absorb_regexp (str): regex for ``contents`` absorption
       tag_type (TAG_TYPE): specify the type of notation
       specific_fuzzy_vals (dict): if provided it should contain for at least one parameter key (provided
-        in ``params`` dict) a list of specific values that will be used by some generic disruptors
+        in ``params`` dict) a list of specific values that will be used by some generic operators
         like tTYPE.
       nl_prefix (bool): add a new line character before the tag
       nl_suffix (bool): add a new line character after the tag

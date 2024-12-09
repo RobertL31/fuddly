@@ -341,7 +341,7 @@ class DefaultPopulation(Population):
             individual.mutate()
 
     def _crossover(self):
-        """ Compensates the kills through the usage of the COMB disruptor """
+        """ Compensates the kills through the usage of the COMB operator """
         random.shuffle(self._individuals)
 
         current_size = len(self._individuals)

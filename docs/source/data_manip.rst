@@ -4,8 +4,8 @@ Data Manipulation
 *****************
 
 The following section will provide you with an understanding on how to manipulate modeled data
-with ``fuddly`` primitives. Data manipulation is what *disruptors* perform (refer to :ref:`tuto:disruptors`).
-This chapter will enable you to write your own *disruptors* or to simply perform custom
+with ``fuddly`` primitives. Data manipulation is what *operators* perform (refer to :ref:`tuto:operators`).
+This chapter will enable you to write your own *operators* or to simply perform custom
 manipulation of a data coming from a file, retrieved from the network (thanks to data
 absorption---refer to :ref:`tuto:dm-absorption`), or even generated from scratch.
 
@@ -120,7 +120,7 @@ method :meth:`fuddly.framework.node.Node.unfreeze`. You will then be able to get
 freezing it again. Actually doing so will produce the next data by cycling over the possible
 node values (described in the graph) in a random or a determinist way (refer to :ref:`dmanip:prop`).
 If you look at getting data from the graph by walking over each of its nodes independently then
-you should look for instance at the generic disruptor ``tWALK`` (refer to :ref:`dis:generic-disruptors`)
+you should look for instance at the generic operator ``tWALK`` (refer to :ref:`dis:generic-operators`)
 and also to the model walker infrastructure :ref:`tuto:modelwalker`).
 
 By default, ``unfreeze`` will act recursively and will affect every nodes reachable from the calling
@@ -144,7 +144,7 @@ addition to resetting the node state it also unfreezes it.
 
 .. note:: When a cycle over the possible node values or shapes is terminated, a notification is
    raised (through the linked environment object). Depending on the ``Finite`` node attribute
-   generic disruptors will recycle the node or change to another one. Setting the ``Finite``
+   generic operators will recycle the node or change to another one. Setting the ``Finite``
    property on all the graph will enable you to have an end on data generation, and to avoid
    the generation of duplicated data.
 
@@ -660,7 +660,7 @@ Node Corruption Infrastructure
 
 You can also leverage the *Node-corruption Infrastructure* (based on hooks within the code) for
 handling various corruption types easily. This infrastructure is especially used by the
-generic disruptor ``tSTRUCT`` (refer to :ref:`dis:generic-disruptors`).
+generic operator ``tSTRUCT`` (refer to :ref:`dis:generic-operators`).
 This infrastructure is based on the following primitives:
 
 - :meth:`fuddly.framework.node.Env.add_node_to_corrupt`

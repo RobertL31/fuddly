@@ -141,7 +141,7 @@ class g_population(Generator):
 
 
 #######################
-# STATEFUL DISRUPTORS #
+# STATEFUL OPERATORS #
 #######################
 
 def truncate_info(info, max_size=60):
@@ -150,11 +150,11 @@ def truncate_info(info, max_size=60):
     return repr(info)
 
 
-@disruptor(tactics, dtype="tWALK", weight=1, modelwalker_user=True,
-           args={'path': ('Graph path regexp to select nodes on which' \
-                          ' the disruptor should apply.', None, str),
+@operator(tactics, dtype="tWALK", weight=1, modelwalker_user=True,
+          args={'path': ('Graph path regexp to select nodes on which' \
+                          ' the operator should apply.', None, str),
                  'sem': ('Semantics to select nodes on which' \
-                         ' the disruptor should apply.', None, (str, list)),
+                         ' the operator should apply.', None, (str, list)),
                  'full_combinatory': ('When set to True, enable full-combinatory mode for '
                                       'non-terminal nodes. It means that the non-terminal nodes '
                                       'will be customized in "FullCombinatory" mode', False, bool),
@@ -178,11 +178,11 @@ def truncate_info(info, max_size=60):
                                       'is cleared.', True, bool),
                  'fix_all': ('For each produced data, reevaluate the constraints on the whole graph.',
                              True, bool)})
-class sd_walk_data_model(StatefulDisruptor):
+class sd_walk_data_model(StatefulOperator):
     """
     Walk through the provided data and for each visited node, iterates
     over the allowed values (with respect to the data model).
-    Note: *no alteration* is performed by this disruptor.
+    Note: *no alteration* is performed by this operator.
     """
     def setup(self, dm, user_input):
         return True
@@ -229,7 +229,7 @@ class sd_walk_data_model(StatefulDisruptor):
         self.walker = iter(self.modelwalker)
 
 
-    def disrupt_data(self, dm, target, data):
+    def transform_data(self, dm, target, data):
         try:
             rnode, consumed_node, orig_node_val, idx = next(self.walker)
         except StopIteration:
@@ -256,11 +256,11 @@ class sd_walk_data_model(StatefulDisruptor):
 
 
 
-@disruptor(tactics, dtype="tTYPE", weight=1, modelwalker_user=True,
-           args={'path': ('Graph path regexp to select nodes on which' \
-                          ' the disruptor should apply.', None, str),
+@operator(tactics, dtype="tTYPE", weight=1, modelwalker_user=True,
+          args={'path': ('Graph path regexp to select nodes on which' \
+                          ' the operator should apply.', None, str),
                  'sem': ('Semantics to select nodes on which' \
-                         ' the disruptor should apply.', None, (str, list)),
+                         ' the operator should apply.', None, (str, list)),
                  'order': ('When set to True, the fuzzing order is strictly guided ' \
                            'by the data structure. Otherwise, fuzz weight (if specified ' \
                            'in the data model) is used for ordering.', True, bool),
@@ -285,7 +285,7 @@ class sd_walk_data_model(StatefulDisruptor):
                                       "'None', it will be guided by the "
                                       "data model determinism. Note: this option is complementary to "
                                       "'determinism' as it acts on the typed node substitutions "
-                                      "that occur through this disruptor", True, bool),
+                                      "that occur through this operator", True, bool),
                  'leaf_determinism': ("If set to 'True', all the typed nodes of the model will be "
                                        "set to determinist mode prior to any fuzzing. If set "
                                        "to 'False', they will be set to random mode. "
@@ -307,7 +307,7 @@ class sd_walk_data_model(StatefulDisruptor):
                                         'meaning valid corner cases will not be generated.',
                                         False, bool),
                  })
-class sd_fuzz_typed_nodes(StatefulDisruptor):
+class sd_fuzz_typed_nodes(StatefulOperator):
     """
     Perform alterations on typed nodes (one at a time) according to:
     - their type (e.g., INT, Strings, ...)
@@ -320,7 +320,7 @@ class sd_fuzz_typed_nodes(StatefulDisruptor):
     If the input has different shapes (described in non-terminal nodes), this will be taken into
     account by fuzzing every shape combinations.
 
-    Note: this disruptor includes what tSEP does and goes beyond with respect to separators.
+    Note: this operator includes what tSEP does and goes beyond with respect to separators.
     """
     def setup(self, dm, user_input):
         assert not (self.only_corner_cases and self.only_invalid_cases)
@@ -382,7 +382,7 @@ class sd_fuzz_typed_nodes(StatefulDisruptor):
         self.current_node = None
         self.run_num = None
 
-    def disrupt_data(self, dm, target, data):
+    def transform_data(self, dm, target, data):
         try:
             rnode, consumed_node, orig_node_val, idx = next(self.walker)
         except StopIteration:
@@ -426,12 +426,12 @@ class sd_fuzz_typed_nodes(StatefulDisruptor):
 
 
 
-@disruptor(tactics, dtype="tALT", weight=1, modelwalker_user=True,
-           args={'conf': ("Change the configuration, with the one provided (by name), of " \
+@operator(tactics, dtype="tALT", weight=1, modelwalker_user=True,
+          args={'conf': ("Change the configuration, with the one provided (by name), of " \
                           "all nodes reachable from the root, one-by-one. [default value is set " \
                           "dynamically with the first-found existing alternate configuration]",
                           None, (str,list,tuple))})
-class sd_switch_to_alternate_conf(StatefulDisruptor):
+class sd_switch_to_alternate_conf(StatefulOperator):
     '''
     Switch the configuration of each node, one by one, with the
     provided alternate configuration.
@@ -487,7 +487,7 @@ class sd_switch_to_alternate_conf(StatefulDisruptor):
         self.run_num = None
 
 
-    def disrupt_data(self, dm, target, data):
+    def transform_data(self, dm, target, data):
 
         try:
             rnode, consumed_node, orig_node_val, idx = next(self.walker)
@@ -519,17 +519,17 @@ class sd_switch_to_alternate_conf(StatefulDisruptor):
         return data
 
 
-@disruptor(tactics, dtype="tSEP", weight=1, modelwalker_user=True,
-           args={'path': ('Graph path regexp to select nodes on which' \
-                          ' the disruptor should apply.', None, str),
+@operator(tactics, dtype="tSEP", weight=1, modelwalker_user=True,
+          args={'path': ('Graph path regexp to select nodes on which' \
+                          ' the operator should apply.', None, str),
                  'sem': ('Semantics to select nodes on which' \
-                         ' the disruptor should apply.', None, (str, list)),
+                         ' the operator should apply.', None, (str, list)),
                  'order': ('When set to True, the fuzzing order is strictly guided ' \
                            'by the data structure. Otherwise, fuzz weight (if specified ' \
                            'in the data model) is used for ordering.', True, bool),
                  'deep': ('When set to True, if a node structure has changed, the modelwalker ' \
                           'will reset its walk through the children nodes.', True, bool)})
-class sd_fuzz_separator_nodes(StatefulDisruptor):
+class sd_fuzz_separator_nodes(StatefulOperator):
     '''
     Perform alterations on separators (one at a time). Each time a
     separator is encountered in the provided data, it will be replaced
@@ -568,7 +568,7 @@ class sd_fuzz_separator_nodes(StatefulDisruptor):
         self.current_node = None
         self.run_num = None
 
-    def disrupt_data(self, dm, target, data):
+    def transform_data(self, dm, target, data):
         try:
             rnode, consumed_node, orig_node_val, idx = next(self.walker)
         except StopIteration:
@@ -606,16 +606,16 @@ class sd_fuzz_separator_nodes(StatefulDisruptor):
 
 
 
-@disruptor(tactics, dtype="tSTRUCT", weight=1,
-           args={'init': ('Make the model walker ignore all the steps until the provided one.', 1, int),
+@operator(tactics, dtype="tSTRUCT", weight=1,
+          args={'init': ('Make the model walker ignore all the steps until the provided one.', 1, int),
                  'max_steps': ('Maximum number of steps (-1 means until the end).', -1, int),
                  'path': ('Graph path regexp to select nodes on which' \
-                          ' the disruptor should apply.', None, str),
+                          ' the operator should apply.', None, str),
                  'sem': ('Semantics to select nodes on which' \
-                         ' the disruptor should apply.', None, (str, list)),
+                         ' the operator should apply.', None, (str, list)),
                  'deep': ('If True, enable corruption of non-terminal node internals',
                           False, bool) })
-class sd_struct_constraints(StatefulDisruptor):
+class sd_struct_constraints(StatefulOperator):
     """
     Perform constraints alteration (one at a time) on each node that depends on another one
     regarding its existence, its quantity, its size, ...
@@ -726,7 +726,7 @@ class sd_struct_constraints(StatefulDisruptor):
 
         # print('\n*** final setup:\n',self.seed.to_bytes())
 
-    def disrupt_data(self, dm, target, data):
+    def transform_data(self, dm, target, data):
 
         stop = False
         if self.idx == 0:
@@ -796,14 +796,14 @@ class sd_struct_constraints(StatefulDisruptor):
             self.handover()
             return data
 
-        # print('\n***disrupt before:\n',self.seed.to_bytes())
+        # print('\n***transform before:\n',self.seed.to_bytes())
         corrupted_seed = Node(self.seed.name, base_node=self.seed, ignore_frozen_state=False,
                               new_env=True)
         corrupted_seed = self.seed.get_clone(ignore_frozen_state=False, new_env=True)
         self.seed.env.remove_node_to_corrupt(consumed_node)
 
-        # print('\n***disrupt source:\n',self.seed.to_bytes())
-        # print('\n***disrupt clone 1:\n',corrupted_seed.to_bytes())
+        # print('\n***transform source:\n',self.seed.to_bytes())
+        # print('\n***transform clone 1:\n',corrupted_seed.to_bytes())
         # nt_nodes_crit = NodeInternalsCriteria(node_kinds=[NodeInternals_NonTerm])
         # ntlist = corrupted_seed.get_reachable_nodes(internals_criteria=nt_nodes_crit, ignore_fstate=False)
         # for nd in ntlist:
@@ -813,7 +813,7 @@ class sd_struct_constraints(StatefulDisruptor):
         corrupted_seed.unfreeze(recursive=True, reevaluate_constraints=True, ignore_entanglement=True)
         corrupted_seed.freeze()
 
-        # print('\n***disrupt after:\n',corrupted_seed.to_bytes())
+        # print('\n***transform after:\n',corrupted_seed.to_bytes())
 
         data.add_info('sample index: {:d}'.format(self.idx))
         data.add_info(' |_ run: {:d} / {:d}'.format(self.idx, self.max_runs))
@@ -827,18 +827,18 @@ class sd_struct_constraints(StatefulDisruptor):
 
 
 ########################
-# STATELESS DISRUPTORS #
+# STATELESS OPERATORS #
 ########################
 
 
-@disruptor(tactics, dtype="EXT", weight=1,
-           args={'cmd': ('The external command the execute.', None, (list,tuple,str)),
+@operator(tactics, dtype="EXT", weight=1,
+          args={'cmd': ('The external command the execute.', None, (list,tuple,str)),
                  'file_mode': ('If True the data will be provided through ' \
                                'a file to the external program, otherwise it ' \
                                'will be provided on the command line directly.', True, bool),
                  'path': ('Graph path regexp to select nodes on which ' \
-                          'the disruptor should apply.', None, str)})
-class d_call_external_program(Disruptor):
+                          'the operator should apply.', None, str)})
+class d_call_external_program(Operator):
     '''
     Call an external program to deal with the data.
     '''
@@ -853,7 +853,7 @@ class d_call_external_program(Disruptor):
     def _get_cmd(self):
         return self.cmd
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         prev_content = prev_data.content
         if self.path and isinstance(prev_content, Node):
             node = prev_content.get_first_node_by_path(path_regexp=self.path)
@@ -914,10 +914,10 @@ class d_call_external_program(Disruptor):
         return prev_data
 
 
-@disruptor(tactics, dtype="STRUCT", weight=1,
-           args={'path': ('Graph path regexp to select nodes on which ' \
-                          'the disruptor should apply.', None, str)})
-class d_fuzz_model_structure(Disruptor):
+@operator(tactics, dtype="STRUCT", weight=1,
+          args={'path': ('Graph path regexp to select nodes on which ' \
+                          'the operator should apply.', None, str)})
+class d_fuzz_model_structure(Operator):
     '''
     Disrupt the data model structure (replace ordered sections by
     unordered ones).
@@ -925,7 +925,7 @@ class d_fuzz_model_structure(Disruptor):
     def setup(self, dm, user_input):
         return True
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         prev_content = prev_data.content
         if isinstance(prev_content, Node):
             fuzz_data_tree(prev_content, self.path)
@@ -936,16 +936,16 @@ class d_fuzz_model_structure(Disruptor):
         return prev_data
 
 
-@disruptor(tactics, dtype="ALT", weight=1,
-           args={'conf': ("Change the configuration, with the one provided (by name), of " \
+@operator(tactics, dtype="ALT", weight=1,
+          args={'conf': ("Change the configuration, with the one provided (by name), of " \
                           "all subnodes fetched by @path, one-by-one. [default value is set " \
                           "dynamically with the first-found existing alternate configuration]",
                           None, str),
                  'path': ('Graph path regexp to select nodes on which ' \
-                          'the disruptor should apply.', None, str),
+                          'the operator should apply.', None, str),
                  'recursive': ('Does the reachable nodes from the selected ' \
                                'ones need also to be changed?', True, bool)})
-class d_switch_to_alternate_conf(Disruptor):
+class d_switch_to_alternate_conf(Operator):
     '''
     Switch to an alternate configuration.
     '''
@@ -971,7 +971,7 @@ class d_switch_to_alternate_conf(Disruptor):
         return True
 
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         prev_content = prev_data.content
         if isinstance(prev_content, Node):
             # try to get more specific default conf
@@ -1003,11 +1003,11 @@ class d_switch_to_alternate_conf(Disruptor):
         return prev_data
 
 
-@disruptor(tactics, dtype="SIZE", weight=4,
-           args={'sz': ("Truncate the data (or part of the data) to the provided size.", 10, int),
+@operator(tactics, dtype="SIZE", weight=4,
+          args={'sz': ("Truncate the data (or part of the data) to the provided size.", 10, int),
                  'path': ('Graph path regexp to select nodes on which ' \
-                          'the disruptor should apply.', None, str)})
-class d_max_size(Disruptor):
+                          'the operator should apply.', None, str)})
+class d_max_size(Operator):
     '''
     Truncate the data (or part of the data) to the provided size.
     '''
@@ -1016,7 +1016,7 @@ class d_max_size(Disruptor):
         return True
 
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
 
         prev_content = prev_data.content
         if isinstance(prev_content, Node):
@@ -1066,13 +1066,13 @@ class d_max_size(Disruptor):
 
 
 
-@disruptor(tactics, dtype="C", weight=4,
-           args={'nb': ('Apply corruption on @nb Nodes fetched randomly within the data model.', 2, int),
+@operator(tactics, dtype="C", weight=4,
+          args={'nb': ('Apply corruption on @nb Nodes fetched randomly within the data model.', 2, int),
                  'path': ('Graph path regexp to select nodes on which ' \
-                          'the disruptor should apply.', None, str),
+                          'the operator should apply.', None, str),
                  'new_val': ('If provided change the selected byte with the new one.', None, str),
                  'ascii': ('Enforce all outputs to be ascii 7bits.', False, bool)})
-class d_corrupt_node_bits(Disruptor):
+class d_corrupt_node_bits(Operator):
     '''
     Corrupt bits on some nodes of the data model.
     '''
@@ -1080,7 +1080,7 @@ class d_corrupt_node_bits(Disruptor):
         return True
 
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
 
         prev_content = prev_data.content
         if isinstance(prev_content, Node):
@@ -1134,11 +1134,11 @@ class d_corrupt_node_bits(Disruptor):
         return ret
 
 
-@disruptor(tactics, dtype="Cp", weight=4,
-           args={'idx': ('Byte index to be corrupted (from 1 to data length).', 1, int),
+@operator(tactics, dtype="Cp", weight=4,
+          args={'idx': ('Byte index to be corrupted (from 1 to data length).', 1, int),
                  'new_val': ('If provided change the selected byte with the new one.', None, bytes),
                  'ascii': ('Enforce all outputs to be ascii 7bits.', False, bool)})
-class d_corrupt_bits_by_position(Disruptor):
+class d_corrupt_bits_by_position(Operator):
     '''
     Corrupt bit at a specific byte.
     '''
@@ -1146,7 +1146,7 @@ class d_corrupt_bits_by_position(Disruptor):
         return True
 
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
 
         val = prev_data.to_bytes()
 
@@ -1162,13 +1162,13 @@ class d_corrupt_bits_by_position(Disruptor):
         return prev_data
 
 
-@disruptor(tactics, dtype="FIX", weight=4,
-           args={'path': ('Graph path regexp to select nodes on which ' \
-                          'the disruptor should apply.', None, str),
+@operator(tactics, dtype="FIX", weight=4,
+          args={'path': ('Graph path regexp to select nodes on which ' \
+                          'the operator should apply.', None, str),
                  'clone_node': ('If True the dmaker will always return a copy ' \
-                                'of the node. (For stateless disruptors dealing with ' \
+                                'of the node. (For stateless operators dealing with ' \
                                 'big data it can be useful to it to False.)', False, bool)})
-class d_fix_constraints(Disruptor):
+class d_fix_constraints(Operator):
     '''
     Fix data constraints.
 
@@ -1181,7 +1181,7 @@ class d_fix_constraints(Disruptor):
     def setup(self, dm, user_input):
         return True
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         prev_content = prev_data.content
         if not isinstance(prev_content, Node):
             prev_data.add_info('UNSUPPORTED INPUT')
@@ -1213,14 +1213,14 @@ class d_fix_constraints(Disruptor):
         return prev_data
 
 
-@disruptor(tactics, dtype="NEXT", weight=4,
-           args={'path': ('Graph path regexp to select nodes on which ' \
-                          'the disruptor should apply.', None, str),
-                 'recursive': ('Apply the disruptor recursively.', True, str),
+@operator(tactics, dtype="NEXT", weight=4,
+          args={'path': ('Graph path regexp to select nodes on which ' \
+                          'the operator should apply.', None, str),
+                 'recursive': ('Apply the operator recursively.', True, str),
                  'clone_node': ('If True the dmaker will always return a copy ' \
-                                'of the node. (for stateless disruptors dealing with ' \
+                                'of the node. (for stateless operators dealing with ' \
                                 'big data it can be useful to it to False).', False, bool)})
-class d_next_node_content(Disruptor):
+class d_next_node_content(Operator):
     '''
     Move to the next content of the nodes from input data or from only
     a piece of it (if the parameter `path` is provided). Basically,
@@ -1230,7 +1230,7 @@ class d_next_node_content(Disruptor):
     def setup(self, dm, user_input):
         return True
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
 
         prev_content = prev_data.content
         if not isinstance(prev_content, Node):
@@ -1263,11 +1263,11 @@ class d_next_node_content(Disruptor):
 
         return prev_data
 
-@disruptor(tactics, dtype="OP", weight=4,
-           args={'path': ('Graph path regexp to select nodes on which ' \
-                          'the disruptor should apply.', None, str),
+@operator(tactics, dtype="OP", weight=4,
+          args={'path': ('Graph path regexp to select nodes on which ' \
+                          'the operator should apply.', None, str),
                  'sem': ('Semantics to select nodes on which' \
-                         ' the disruptor should apply.', None, (str, list)),
+                         ' the operator should apply.', None, (str, list)),
                  'op': ('The operation to perform on the selected nodes.', Node.clear_attr,
                         types.MethodType),
                  'op_ref': ("Predefined operation that can be referenced by name. The current "
@@ -1277,9 +1277,9 @@ class d_next_node_content(Disruptor):
                             (),
                             tuple),
                  'clone_node': ('If True the dmaker will always return a copy ' \
-                                'of the node. (For stateless disruptors dealing with ' \
+                                'of the node. (For stateless operators dealing with ' \
                                 'big data it can be useful to set it to False.)', False, bool)})
-class d_operate_on_nodes(Disruptor):
+class d_operate_on_nodes(Operator):
     '''
     Perform an operation on the nodes specified by the regexp path. @op is an operation that
     applies to a node and @params are a tuple containing the parameters that will be provided to
@@ -1288,7 +1288,7 @@ class d_operate_on_nodes(Disruptor):
     def setup(self, dm, user_input):
         return True
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         ok = False
         prev_content = prev_data.content
         if not isinstance(prev_content, Node):
@@ -1354,11 +1354,11 @@ class d_operate_on_nodes(Disruptor):
     def _add_info(self, prev_data, n):
         prev_data.add_info("changed node:        {!s}".format(n.get_path_from(prev_data.content)))
 
-@disruptor(tactics, dtype="MOD", weight=4,
-           args={'path': ('Graph path regexp to select nodes on which ' \
-                          'the disruptor should apply.', None, str),
+@operator(tactics, dtype="MOD", weight=4,
+          args={'path': ('Graph path regexp to select nodes on which ' \
+                          'the operator should apply.', None, str),
                  'sem': ('Semantics to select nodes on which' \
-                         ' the disruptor should apply.', None, (str, list)),
+                         ' the operator should apply.', None, (str, list)),
                  'value': ('The new value to inject within the data.', b'', bytes),
                  'constraints': ('Constraints for the absorption of the new value.', AbsNoCsts(), AbsCsts),
                  'multi_mod': ('Dictionary of <path>:<item> pairs or '
@@ -1370,9 +1370,9 @@ class d_operate_on_nodes(Disruptor):
                  'unfold': ('Resolve all the generator nodes within the input before performing '
                             'the @path/@sem research', False, bool),
                  'clone_node': ('If True the dmaker will always return a copy ' \
-                                'of the node. (For stateless disruptors dealing with ' \
+                                'of the node. (For stateless operators dealing with ' \
                                 'big data it can be useful to set it to False.)', False, bool)})
-class d_modify_nodes(Disruptor):
+class d_modify_nodes(Operator):
     """
     Perform modifications on the provided data. Two ways are possible:
 
@@ -1386,7 +1386,7 @@ class d_modify_nodes(Disruptor):
     def setup(self, dm, user_input):
         return True
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         prev_content = prev_data.content
         if not isinstance(prev_content, Node):
             prev_data.add_info('UNSUPPORTED INPUT')
@@ -1454,17 +1454,17 @@ class d_modify_nodes(Disruptor):
             prev_data.add_info("remaining:      '{!s}'".format(remaining))
 
 
-@disruptor(tactics, dtype="CALL", weight=4,
-           args={'func': ('The function that will be called with a node as its first parameter, '
+@operator(tactics, dtype="CALL", weight=4,
+          args={'func': ('The function that will be called with a node as its first parameter, '
                           'and provided optionnaly with addtionnal parameters if @params is set.',
                           lambda x:x,
                           types.MethodType),
                  'params': ('Tuple of parameters that will be provided to the function.',
                             None, tuple) })
-class d_call_function(Disruptor):
+class d_call_function(Operator):
     """
     Call the function provided with the first parameter being the Data() object received as
-    input of this disruptor, and optionally with additional parameters if @params is set. The
+    input of this operator, and optionally with additional parameters if @params is set. The
     function should return a Data() object.
 
     The signature of the function should be compatible with:
@@ -1473,7 +1473,7 @@ class d_call_function(Disruptor):
 
     """
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         try:
             if self.params:
                 new_data = self.func(prev_data, *self.params)
@@ -1492,9 +1492,9 @@ class d_call_function(Disruptor):
         return new_data
 
 
-@disruptor(tactics, dtype="COPY", weight=4,
-           args=None)
-class d_shallow_copy(Disruptor):
+@operator(tactics, dtype="COPY", weight=4,
+          args=None)
+class d_shallow_copy(Operator):
     '''
     Shallow copy of the input data, which means: ignore its frozen
     state during the copy.
@@ -1502,7 +1502,7 @@ class d_shallow_copy(Disruptor):
     def setup(self, dm, user_input):
         return True
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         prev_content = prev_data.content
         if not isinstance(prev_content, Node):
             prev_data.add_info('UNSUPPORTED INPUT')
@@ -1515,9 +1515,9 @@ class d_shallow_copy(Disruptor):
 
         return prev_data
 
-@disruptor(tactics, dtype="ADD", weight=4,
-           args={'path': ('Graph path to select the node on which ' \
-                          'the disruptor should apply.', None, str),
+@operator(tactics, dtype="ADD", weight=4,
+          args={'path': ('Graph path to select the node on which ' \
+                          'the operator should apply.', None, str),
                  'after': ('If True, the addition will be done after the selected node. Otherwise, '
                            'it will be done before.',
                           True, bool),
@@ -1530,7 +1530,7 @@ class d_shallow_copy(Disruptor):
                  'name': ('If provided, the added node will have this name.',
                           None, str)
                  })
-class d_add_data(Disruptor):
+class d_add_data(Operator):
     """
     Add some data within the retrieved input.
     """
@@ -1539,7 +1539,7 @@ class d_add_data(Disruptor):
             return False
         return True
 
-    def disrupt_data(self, dm, target, prev_data):
+    def transform_data(self, dm, target, prev_data):
         prev_content = prev_data.content
         if isinstance(prev_content, bytes):
             prev_content = Node('wrapper', subnodes=[Node('raw', values=[prev_content])])
@@ -1585,16 +1585,16 @@ class d_add_data(Disruptor):
         return prev_data
 
 
-@disruptor(tactics, dtype="tWALKcsp", weight=1, modelwalker_user=False,
-           args={'init': ('Make the operator ignore all the steps until the provided one', 1, int),
+@operator(tactics, dtype="tWALKcsp", weight=1, modelwalker_user=False,
+          args={'init': ('Make the operator ignore all the steps until the provided one', 1, int),
                  'clone_node': ('If True, this operator will always return a copy '
                                 'of the node. (for stateless diruptors dealing with '
                                 'big data it can be usefull to set it to False)', True, bool),
                  'notify_exhaustion': ('When all the solutions of the CSP have been walked '
-                                       'through, the disruptor will notify it if this parameter '
+                                       'through, the operator will notify it if this parameter '
                                        'is set to True.', True, bool),
                  })
-class sd_walk_csp_solutions(StatefulDisruptor):
+class sd_walk_csp_solutions(StatefulOperator):
     """
 
     When the CSP (Constraint Satisfiability Problem) backend are used in the data description.
@@ -1622,7 +1622,7 @@ class sd_walk_csp_solutions(StatefulDisruptor):
         self.seed = prev_content
         self.seed.freeze(resolve_csp=True)
 
-    def disrupt_data(self, dm, target, data):
+    def transform_data(self, dm, target, data):
 
         if self._first_call_performed or self.init > 1:
             self.seed.unfreeze(recursive=False, dont_change_state=True, walk_csp=True,
@@ -1656,8 +1656,8 @@ class sd_walk_csp_solutions(StatefulDisruptor):
         return data
 
 
-@disruptor(tactics, dtype="tCONST", weight=1, modelwalker_user=False,
-           args={'const_idx': ('Index of the constraint to begin with (first index is 1)', 1, int),
+@operator(tactics, dtype="tCONST", weight=1, modelwalker_user=False,
+          args={'const_idx': ('Index of the constraint to begin with (first index is 1)', 1, int),
                  'sample_idx': ('Index of the sample for the selected constraint to begin with ('
                                 'first index is 1)', 1, int),
                  'clone_node': ('If True, this operator will always return a copy '
@@ -1667,7 +1667,7 @@ class sd_walk_csp_solutions(StatefulDisruptor):
                                      'constraint (-1 means until the end)',
                                      -1, int),
                  })
-class sd_constraint_fuzz(StatefulDisruptor):
+class sd_constraint_fuzz(StatefulOperator):
     """
 
     When the CSP (Constraint Satisfiability Problem) backend are used in the node description.
@@ -1735,7 +1735,7 @@ class sd_constraint_fuzz(StatefulDisruptor):
         else:
             return False
 
-    def disrupt_data(self, dm, target, data):
+    def transform_data(self, dm, target, data):
 
         if not self._constraint_negated:
             self.csp.negate_constraint(self._current_constraint_idx)

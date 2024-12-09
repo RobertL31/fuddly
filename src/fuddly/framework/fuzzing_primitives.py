@@ -572,7 +572,7 @@ class NodeConsumerStub(object):
 
     def reset_state(self):
         """
-        Called by the ModelWalker to reinitialize the disruptor.
+        Called by the ModelWalker to reinitialize the operator.
         """
 
     def init_specific(self, **kwargs):

@@ -639,10 +639,10 @@ class FmkPlumbing(object):
 
     def _cleanup_dm_attrs_from_fmk(self):
         self._generic_tactics.clear_generator_clones()
-        self._generic_tactics.clear_disruptor_clones()
+        self._generic_tactics.clear_operator_clones()
         if self._tactics:
             self._tactics.clear_generator_clones()
-            self._tactics.clear_disruptor_clones()
+            self._tactics.clear_operator_clones()
         self._tactics = self.__st_dict[self.dm]
         self._recompute_current_generators()
 
@@ -706,13 +706,13 @@ class FmkPlumbing(object):
 
     def _fmkDB_insert_dm_and_dmakers(self, dm_name, tactics):
         self.fmkDB.insert_data_model(dm_name)
-        disruptor_types = tactics.disruptor_types
-        if disruptor_types:
-            for dis_type in sorted(disruptor_types):
-                disruptor_names = tactics.get_disruptors_list(dis_type)
-                for dis_name in disruptor_names:
-                    dis_obj = tactics.get_disruptor_obj(dis_type, dis_name)
-                    stateful = True if issubclass(dis_obj.__class__, StatefulDisruptor) else False
+        operator_types = tactics.operator_types
+        if operator_types:
+            for dis_type in sorted(operator_types):
+                operator_names = tactics.get_operators_list(dis_type)
+                for dis_name in operator_names:
+                    dis_obj = tactics.get_operator_obj(dis_type, dis_name)
+                    stateful = True if issubclass(dis_obj.__class__, StatefulOperator) else False
                     self.fmkDB.insert_dmaker(dm_name, dis_type, dis_name, False, stateful)
         generator_types = tactics.generator_types
         if generator_types:
@@ -1313,8 +1313,8 @@ class FmkPlumbing(object):
 
             if self.prj.project_operators:
                 for op_ref in [Tactics.operator_ref_from(op) for op in self.prj.project_operators]:
-                    if op_ref in self._generic_tactics.disruptors:
-                        del self._generic_tactics.disruptors[op_ref]
+                    if op_ref in self._generic_tactics.operators:
+                        del self._generic_tactics.operators[op_ref]
 
         if self._is_started():
             if self.is_target_enabled():
@@ -1521,9 +1521,9 @@ class FmkPlumbing(object):
         else:
             # Clear all cloned dmakers
             self._generic_tactics.clear_generator_clones()
-            self._generic_tactics.clear_disruptor_clones()
+            self._generic_tactics.clear_operator_clones()
             self._tactics.clear_generator_clones()
-            self._tactics.clear_disruptor_clones()
+            self._tactics.clear_operator_clones()
 
         self._tactics = self.__st_dict[dm]
 
@@ -1614,11 +1614,11 @@ class FmkPlumbing(object):
                     return False
             new_dm.merge_with(dm)
             tactics = self.__st_dict[dm]
-            for k, v in tactics.disruptors.items():
-                if k in new_tactics.disruptors:
-                    raise ValueError("the disruptor '{:s}' exists already".format(k))
+            for k, v in tactics.operators.items():
+                if k in new_tactics.operators:
+                    raise ValueError("the operator '{:s}' exists already".format(k))
                 else:
-                    new_tactics.disruptors[k] = v
+                    new_tactics.operators[k] = v
             for k, v in tactics.generators.items():
                 if k in new_tactics.generators:
                     raise ValueError("the generator '{:s}' exists already".format(k))
@@ -2380,7 +2380,7 @@ class FmkPlumbing(object):
             id_from_db: Data can be fetched from the Data Bank and send directly to the targets or be
               used as the seed of a DataProcess if such object is provided in `data_desc`.
             max_loop: Maximum number of iteration. -1 one means "infinite" or until some criteria occurs
-              (e.g., a disruptor has exhausted, the end-user issued Ctrl-C, ...)
+              (e.g., a operator has exhausted, the end-user issued Ctrl-C, ...)
             tg_ids: Target ID or list of the Target IDs on which data will be sent. If provided
               it will supersede the `tg_ids` parameter of any DataProcess provided in `data_desc`
             verbose: Pretty print sent data
@@ -2730,15 +2730,15 @@ class FmkPlumbing(object):
                             self.lg.log_generator_info(dmaker_type, data_maker_name, ui)
 
                         else:
-                            dmaker_obj = self._generic_tactics.get_disruptor_obj(dmaker_type, data_maker_name)
+                            dmaker_obj = self._generic_tactics.get_operator_obj(dmaker_type, data_maker_name)
                             if dmaker_obj is None:
-                                dmaker_obj = self._tactics.get_disruptor_obj(dmaker_type, data_maker_name)
+                                dmaker_obj = self._tactics.get_operator_obj(dmaker_type, data_maker_name)
                             if dmaker_obj in self.__initialized_dmakers and self.__initialized_dmakers[dmaker_obj][0]:
                                 ui = self.__initialized_dmakers[dmaker_obj][1]
                             else:
                                 ui = user_input
 
-                            self.lg.log_disruptor_info(dmaker_type, data_maker_name, ui)
+                            self.lg.log_operator_info(dmaker_type, data_maker_name, ui)
 
                         for info in dt.read_info(dmaker_type, data_maker_name):
                             self.lg.log_data_info(info, dmaker_type, data_maker_name)
@@ -3100,10 +3100,10 @@ class FmkPlumbing(object):
 
                 if dmaker_type not in gen:
                     if user_input:
-                        msg = "|- disruptor type: %s | data_maker name: %s | User input: %s" % \
+                        msg = "|- operator type: %s | data_maker name: %s | User input: %s" % \
                             (dmaker_type, data_maker_name, user_input)
                     else:
-                        msg = "|- disruptor type: %s | data_maker name: %s | No user input" % \
+                        msg = "|- operator type: %s | data_maker name: %s | No user input" % \
                             (dmaker_type, data_maker_name)
                     self.lg.print_console(msg, rgb=Color.SUBINFO)
 
@@ -3450,7 +3450,7 @@ class FmkPlumbing(object):
                     l.append(h_entry)
             first = False
         else:
-            # needed because disruptors can take over the data generation
+            # needed because operators can take over the data generation
             data = Data()
             initial_generator_info = None
 
@@ -3469,7 +3469,7 @@ class FmkPlumbing(object):
                 user_input = None
 
             if first and action == "NOGEN":
-                self.lg.log_fmk_info("We are asked to ignore the generator and to go on with disruptors resolution")
+                self.lg.log_fmk_info("We are asked to ignore the generator and to go on with operators resolution")
                 first = False
                 continue
 
@@ -3483,16 +3483,16 @@ class FmkPlumbing(object):
 
             if not first and not dmaker_switch_performed:
                 dmaker_switch_performed = True
-                get_dmaker_obj = self._tactics.get_disruptor_obj
-                get_random_dmaker_obj = self._tactics.get_random_disruptor
-                get_generic_dmaker_obj = self._generic_tactics.get_disruptor_obj
-                get_random_generic_dmaker_obj = self._generic_tactics.get_random_disruptor
-                get_dmaker_name = self._tactics.get_disruptor_name
-                get_generic_dmaker_name = self._generic_tactics.get_disruptor_name
-                specific_dmaker_types = self._tactics.disruptor_types
-                generic_dmaker_types = self._generic_tactics.disruptor_types
-                clone_dmaker = self._tactics.clone_disruptor
-                clone_gen_dmaker = self._generic_tactics.clone_disruptor
+                get_dmaker_obj = self._tactics.get_operator_obj
+                get_random_dmaker_obj = self._tactics.get_random_operator
+                get_generic_dmaker_obj = self._generic_tactics.get_operator_obj
+                get_random_generic_dmaker_obj = self._generic_tactics.get_random_operator
+                get_dmaker_name = self._tactics.get_operator_name
+                get_generic_dmaker_name = self._generic_tactics.get_operator_name
+                specific_dmaker_types = self._tactics.operator_types
+                generic_dmaker_types = self._generic_tactics.operator_types
+                clone_dmaker = self._tactics.clone_operator
+                clone_gen_dmaker = self._generic_tactics.clone_operator
 
             if isinstance(action, (tuple, list)):
                 dmaker_type = action[0]
@@ -3510,7 +3510,7 @@ class FmkPlumbing(object):
                     cloned_dmaker_type = parsed.group(1)
                     dmaker_type = parsed.group(0)
 
-                    err_msg = "Can't clone: invalid generator/disruptor IDs (%s)" % dmaker_ref
+                    err_msg = "Can't clone: invalid generator/operator IDs (%s)" % dmaker_ref
 
                     if cloned_dmaker_type in specific_dmaker_types:
                         ok, cloned_dmaker_name = clone_dmaker(cloned_dmaker_type, new_dmaker_type=dmaker_type, dmaker_name=provided_dmaker_name)
@@ -3526,7 +3526,7 @@ class FmkPlumbing(object):
 
                     assert dmaker_obj is not None
                     is_gen = issubclass(dmaker_obj.__class__, Generator)
-                    stateful = is_gen or issubclass(dmaker_obj.__class__, StatefulDisruptor)
+                    stateful = is_gen or issubclass(dmaker_obj.__class__, StatefulOperator)
 
                     if not ok:
                         self.set_error(err_msg, code=Error.CloneError)
@@ -3546,7 +3546,7 @@ class FmkPlumbing(object):
                 else:
                     dmaker_obj = get_generic_dmaker_obj(dmaker_type, provided_dmaker_name)
                 if dmaker_obj is None:
-                    self.set_error("Invalid generator/disruptor (%s)" % dmaker_ref,
+                    self.set_error("Invalid generator/operator (%s)" % dmaker_ref,
                                    code=Error.InvalidDmaker)
                     return None
 
@@ -3568,9 +3568,9 @@ class FmkPlumbing(object):
                 initial_generator_info = [dmaker_type, dmaker_name, ui]
 
             # Make sure that if a Generator is active (i.e., it has
-            # not been disabled by a 'controller' disruptor), all
-            # disruptors that follows are active. Moreover if it is a
-            # controller disruptor, it has to be reset, to handle the
+            # not been disabled by a 'controller' operator), all
+            # operators that follows are active. Moreover if it is a
+            # controller operator, it has to be reset, to handle the
             # new generated data.
             if activate_all:
                 dmaker_obj.set_attr(DataMakerAttr.Active)
@@ -3590,23 +3590,23 @@ class FmkPlumbing(object):
 
             if not dmaker_obj.is_attr_set(DataMakerAttr.Active):
                 shortcut_history.append("Data maker [#{:d}] of type '{:s}' (name: {:s}) has been disabled " \
-                                        "by this disruptor taking over it.".format(idx + 1, dmaker_type, dmaker_name))
+                                        "by this operator taking over it.".format(idx + 1, dmaker_type, dmaker_name))
                 first = False
                 continue
 
             if dmaker_obj.is_attr_set(DataMakerAttr.Controller) and not dmaker_obj.is_attr_set(DataMakerAttr.HandOver):
                 for dmobj in current_dmobj_list[:-1]:
-                    # if a disruptor is used at least twice in the action list
+                    # if a operator is used at least twice in the action list
                     # we should avoid disabling it
                     if dmobj is not dmaker_obj:
                         dmobj.clear_attr(DataMakerAttr.Active)
                     else:
                         # this case is certainly not a thing the user want so alert him
                         msg = (
-                            "A disruptor taking over the data generation is at least present twice! "
+                            "A operator taking over the data generation is at least present twice! "
                             "The resulting behaviour is certainly not what you want, because it will execute twice the "
-                            "disrupt_data() method on this disruptor with the same inputs (user + data). You should avoid "
-                            "this situation by cloning first the disruptor you want to use twice."
+                            "transform_data() method on this operator with the same inputs (user + data). You should avoid "
+                            "this situation by cloning first the operator you want to use twice."
                         )
                         self.set_error(msg, code=Error.CommandError)
                         for dmobj in current_dmobj_list[:-1]:
@@ -3651,13 +3651,13 @@ class FmkPlumbing(object):
                                 # Usefull to replay from the beginning a modelwalking sequence
                                 dmaker_obj.produced_seed = Data(data.get_content(do_copy=True))
                         invalid_data = not self._is_data_valid(data)
-                    elif isinstance(dmaker_obj, Disruptor):
+                    elif isinstance(dmaker_obj, Operator):
                         if not self._is_data_valid(data):
                             invalid_data = True
                         else:
-                            data = dmaker_obj.disrupt_data(self.dm, self.targets, data)
-                    elif isinstance(dmaker_obj, StatefulDisruptor):
-                        # we only check validity in the case the stateful disruptor
+                            data = dmaker_obj.transform_data(self.dm, self.targets, data)
+                    elif isinstance(dmaker_obj, StatefulOperator):
+                        # we only check validity in the case the stateful operator
                         # has not been seeded
                         if dmaker_obj.is_attr_set(DataMakerAttr.NeedSeed) and not self._is_data_valid(data):
                             invalid_data = True
@@ -3667,7 +3667,7 @@ class FmkPlumbing(object):
                                 data = ret
                                 dmaker_obj.set_attr(DataMakerAttr.NeedSeed)
                             else:
-                                data = dmaker_obj.disrupt_data(self.dm, self.targets, data)
+                                data = dmaker_obj.transform_data(self.dm, self.targets, data)
                     else:
                         raise ValueError
 
@@ -3694,22 +3694,22 @@ class FmkPlumbing(object):
 
                 except Exception:
                     unrecoverable_error = True
-                    self._handle_user_code_exception("The generate_data()/disrupt_data()/set_seed() " \
+                    self._handle_user_code_exception("The generate_data()/transform_data()/set_seed() " \
                                                      "method of Data Maker '%s' has crashed!" % dmaker_ref)
 
-                # If a generator need a reset or a ('controller') disruptor has yielded
+                # If a generator need a reset or a ('controller') operator has yielded
                 if dmaker_obj.is_attr_set(DataMakerAttr.SetupRequired):
                     assert dmaker_obj in self.__initialized_dmakers
                     self.__initialized_dmakers[dmaker_obj] = (False, None)
 
-                def _handle_disruptors_handover(dmlist):
-                    # dmlist[-1] is the current disruptor
+                def _handle_operators_handover(dmlist):
+                    # dmlist[-1] is the current operator
                     dmlist[-1].clear_attr(DataMakerAttr.HandOver)
 
                     # We traverse the list in opposite order till we
                     # find another controller or till we run through
                     # all the list.  We also ignore the last element
-                    # which is the current disruptor
+                    # which is the current operator
                     dmlist_mangled = dmlist[-2::-1]
                     dmlist_mangled_size = len(dmlist_mangled)
                     for dmobj, idx in zip(dmlist_mangled, range(dmlist_mangled_size)):
@@ -3718,15 +3718,15 @@ class FmkPlumbing(object):
                         if dmobj.is_attr_set(DataMakerAttr.Controller):
                             dmobj.set_attr(DataMakerAttr.Active)
                             if dmobj.is_attr_set(DataMakerAttr.HandOver):
-                                _handle_disruptors_handover(dmlist[: dmlist_mangled_size - idx])
+                                _handle_operators_handover(dmlist[: dmlist_mangled_size - idx])
                             break
                         else:
                             dmobj.set_attr(DataMakerAttr.Active)
 
-                # Apply to controller disruptor only
+                # Apply to controller operator only
                 if dmaker_obj.is_attr_set(DataMakerAttr.HandOver):
-                    _handle_disruptors_handover(current_dmobj_list)
-                    self.set_error("Disruptor '{:s}' ({:s}) has yielded!".format(dmaker_name, dmaker_type),
+                    _handle_operators_handover(current_dmobj_list)
+                    self.set_error("Operator '{:s}' ({:s}) has yielded!".format(dmaker_name, dmaker_type),
                                    context={"dmaker_name": dmaker_name, "dmaker_type": dmaker_type},
                                    code=Error.HandOver)
                     return None
@@ -3741,7 +3741,7 @@ class FmkPlumbing(object):
                     unrecoverable_error = True
                     self._handle_user_code_exception("The cleanup() method of Data Maker '%s' has crashed!" % dmaker_ref)
 
-            # if this is the Disruptor that has took over
+            # if this is the Operator that has took over
             if dmaker_obj.is_attr_set(DataMakerAttr.Controller):
                 for info in shortcut_history:
                     data.add_info(info)
@@ -3833,8 +3833,8 @@ class FmkPlumbing(object):
                            code=Error.FmkWarning)
 
     @EnforceOrder(accepted_states=["S2"])
-    def set_disruptor_weight(self, dmaker_type, data_maker_name, weight):
-        self._tactics.set_disruptor_weight(dmaker_type, data_maker_name, weight)
+    def set_operator_weight(self, dmaker_type, data_maker_name, weight):
+        self._tactics.set_operator_weight(dmaker_type, data_maker_name, weight)
 
     @EnforceOrder(accepted_states=["S2"])
     def set_generator_weight(self, generator_type, data_maker_name, weight):
@@ -3952,10 +3952,10 @@ class FmkPlumbing(object):
         l2 = sorted(l2)
         print_dmaker(l2, "Generic")
 
-        self.lg.print_console("===[ Disruptor Types ]" + "=" * 58, rgb=Color.FMKINFOGROUP, nl_after=True)
+        self.lg.print_console("===[ Operator Types ]" + "=" * 58, rgb=Color.FMKINFOGROUP, nl_after=True)
 
         dmakers = {}
-        for dt, related_dm in self._tactics.disruptors_info():
+        for dt, related_dm in self._tactics.operators_info():
             if related_dm is None:
                 continue
             if related_dm not in dmakers:
@@ -3966,7 +3966,7 @@ class FmkPlumbing(object):
             print_dmaker(dt_list, "Data Model: {}".format(related_dm.name))
 
         l2 = []
-        for dmaker_type in self._generic_tactics.disruptor_types:
+        for dmaker_type in self._generic_tactics.operator_types:
             l2.append(dmaker_type)
         l2 = sorted(l2)
         print_dmaker(l2, "Generic")
@@ -4073,54 +4073,54 @@ class FmkPlumbing(object):
         self.lg.print_console("\n", nl_before=False)
 
     @EnforceOrder(accepted_states=["S2"])
-    def show_disruptors(self, dmaker_type=None):
-        disruptors = self._tactics.disruptor_types
-        gen_disruptors = self._generic_tactics.disruptor_types
+    def show_operators(self, dmaker_type=None):
+        operators = self._tactics.operator_types
+        gen_operators = self._generic_tactics.operator_types
         if dmaker_type:
-            if dmaker_type not in disruptors and dmaker_type not in gen_disruptors:
+            if dmaker_type not in operators and dmaker_type not in gen_operators:
                 self.set_error("The specified data maker does not exist!",
                                code=Error.FmkWarning)
                 return
             else:
-                disruptors = [] if dmaker_type not in disruptors else [dmaker_type]
-                gen_disruptors = [] if dmaker_type not in gen_disruptors else [dmaker_type]
+                operators = [] if dmaker_type not in operators else [dmaker_type]
+                gen_operators = [] if dmaker_type not in gen_operators else [dmaker_type]
 
-        if disruptors:
-            self.lg.print_console("\n-=[ SPECIFIC DISRUPTORS ]=-", rgb=Color.INFO, style=FontStyle.BOLD)
-            for dmt in sorted(disruptors):
-                msg = "\n*** Specific disruptors of type '%s' ***" % dmt
+        if operators:
+            self.lg.print_console("\n-=[ SPECIFIC OPERATORS ]=-", rgb=Color.INFO, style=FontStyle.BOLD)
+            for dmt in sorted(operators):
+                msg = "\n*** Specific operators of type '%s' ***" % dmt
                 self.lg.print_console(msg, rgb=Color.INFO)
-                disruptors_list = self._tactics.get_disruptors_list(dmt)
-                for name in disruptors_list:
-                    dis_obj = self._tactics.get_disruptor_obj(dmt, name)
-                    if issubclass(dis_obj.__class__, StatefulDisruptor):
-                        dis_type = "stateful disruptor"
+                operators_list = self._tactics.get_operators_list(dmt)
+                for name in operators_list:
+                    dis_obj = self._tactics.get_operator_obj(dmt, name)
+                    if issubclass(dis_obj.__class__, StatefulOperator):
+                        dis_type = "stateful operator"
                     else:
-                        dis_type = "stateless disruptor"
+                        dis_type = "stateless operator"
                     msg = "  name: {:s} ".format(name) + \
                           " (weight: {:d}, valid: {!r})".format(
-                                  self._tactics.get_disruptor_weight(dmt, name),
-                                  self._tactics.get_disruptor_validness(dmt, name))
+                                  self._tactics.get_operator_weight(dmt, name),
+                                  self._tactics.get_operator_validness(dmt, name))
                     msg += " " + colorize("[{:s}]".format(dis_type), rgb=Color.INFO_ALT)
                     msg += self._dmaker_desc_str(dis_obj)
                     self.lg.print_console(msg, limit_output=False)
 
-        if gen_disruptors:
-            self.lg.print_console("\n-=[ GENERIC DISRUPTORS ]=-", rgb=Color.INFO, style=FontStyle.BOLD)
-            for dmt in sorted(gen_disruptors):
-                msg = "\n*** Generic disruptors of type '%s' ***" % dmt
+        if gen_operators:
+            self.lg.print_console("\n-=[ GENERIC OPERATORS ]=-", rgb=Color.INFO, style=FontStyle.BOLD)
+            for dmt in sorted(gen_operators):
+                msg = "\n*** Generic operators of type '%s' ***" % dmt
                 self.lg.print_console(msg, rgb=Color.INFO)
-                gen_disruptors_list = self._generic_tactics.get_disruptors_list(dmt)
-                for name in gen_disruptors_list:
-                    dis_obj = self._generic_tactics.get_disruptor_obj(dmt, name)
-                    if issubclass(dis_obj.__class__, StatefulDisruptor):
-                        dis_type = "stateful disruptor"
+                gen_operators_list = self._generic_tactics.get_operators_list(dmt)
+                for name in gen_operators_list:
+                    dis_obj = self._generic_tactics.get_operator_obj(dmt, name)
+                    if issubclass(dis_obj.__class__, StatefulOperator):
+                        dis_type = "stateful operator"
                     else:
-                        dis_type = "stateless disruptor"
+                        dis_type = "stateless operator"
                     msg = "  name: {:s} ".format(name) + \
                           " (weight: {:d}, valid: {!r})".format(
-                              self._generic_tactics.get_disruptor_weight(dmt, name),
-                              self._generic_tactics.get_disruptor_validness(dmt, name))
+                              self._generic_tactics.get_operator_weight(dmt, name),
+                              self._generic_tactics.get_operator_validness(dmt, name))
                     msg += " " + colorize("[{:s}]".format(dis_type), rgb=Color.INFO_ALT)
                     msg += self._dmaker_desc_str(dis_obj)
                     self.lg.print_console(msg, limit_output=False)
@@ -4722,11 +4722,11 @@ class FmkShell(cmd.Cmd):
         self.__error = False
         return False
 
-    def do_show_disruptors(self, line):
+    def do_show_operators(self, line):
         """
-        Show all the disruptors description or the ones of the
+        Show all the operators description or the ones of the
         provided type
-        |_ syntax: show_disruptors [disruptor_type]
+        |_ syntax: show_operators [operator_type]
         """
         args = line.split()
         args_len = len(args)
@@ -4739,7 +4739,7 @@ class FmkShell(cmd.Cmd):
         else:
             dmt = None
 
-        self.fz.show_disruptors(dmaker_type=dmt)
+        self.fz.show_operators(dmaker_type=dmt)
         return False
 
     def do_show_generators(self, line):
@@ -4784,12 +4784,12 @@ class FmkShell(cmd.Cmd):
     def do_send_loop_keepseed(self, line):
         """
         Execute the 'send' command in a loop and save the seed
-        |_ syntax: send_loop_keepseed <#loop> <generator_type> [disruptor_type_1 ... disruptor_type_n]  [targetID1 ... targetIDN]
+        |_ syntax: send_loop_keepseed <#loop> <generator_type> [operator_type_1 ... operator_type_n]  [targetID1 ... targetIDN]
 
         Notes:
             - To loop indefinitely use -1 for #loop. To stop the loop use Ctrl+C
             - send_loop_keepseed keep the generator output until a reset is performed on it.
-              Thus, in the context of a disruptor chain, if the generator is non-deterministic,
+              Thus, in the context of a operator chain, if the generator is non-deterministic,
               and even if you clean up the generator, you could still reproduce the exact sequence
               of data production from the beginning
         """
@@ -4817,10 +4817,10 @@ class FmkShell(cmd.Cmd):
 
         return False
 
-    def do_set_disruptor_weight(self, line):
+    def do_set_operator_weight(self, line):
         """
-        Set the weight of the given disruptor
-        |_ syntax: set_disruptor_weight <dmaker_type> <disruptor> <weight>
+        Set the weight of the given operator
+        |_ syntax: set_operator_weight <dmaker_type> <operator> <weight>
         """
         args = line.split()
 
@@ -4834,7 +4834,7 @@ class FmkShell(cmd.Cmd):
 
         self.__error = False
 
-        self.fz.set_disruptor_weight(args[0], args[1], w)
+        self.fz.set_operator_weight(args[0], args[1], w)
 
         return False
 
@@ -5064,7 +5064,7 @@ class FmkShell(cmd.Cmd):
     def do_send(self, line, verbose=False):
         """
         Carry out multiple fuzzing steps in sequence
-        |_ syntax: send <generator_type> [disruptor_type_1 ... disruptor_type_n] [targetID1 ... targetIDN]
+        |_ syntax: send <generator_type> [operator_type_1 ... operator_type_n] [targetID1 ... targetIDN]
         """
         self.__error = True
 
@@ -5088,7 +5088,7 @@ class FmkShell(cmd.Cmd):
     def do_send_verbose(self, line):
         """
         Carry out multiple fuzzing steps in sequence (pretty print enabled)
-        |_ syntax: send_verbose <generator_type> [disruptor_type_1 ... disruptor_type_n] [targetID1 ... targetIDN]
+        |_ syntax: send_verbose <generator_type> [operator_type_1 ... operator_type_n] [targetID1 ... targetIDN]
         """
         ret = self.do_send(line, verbose=True)
         return ret
@@ -5096,7 +5096,7 @@ class FmkShell(cmd.Cmd):
     def do_send_loop(self, line, use_existing_seed=False, verbose=False):
         """
         Execute the 'send' command in a loop
-        |_ syntax: send_loop <#loop> <generator_type> [disruptor_type_1 ... disruptor_type_n] [targetID1 ... targetIDN]
+        |_ syntax: send_loop <#loop> <generator_type> [operator_type_1 ... operator_type_n] [targetID1 ... targetIDN]
 
         Notes:
             - To loop indefinitely use -1 for #loop. To stop the loop use Ctrl+C
@@ -5142,7 +5142,7 @@ class FmkShell(cmd.Cmd):
     def do_send_loop_verbose(self, line):
         """
         Execute the 'send' command in a loop and save the seed
-        |_ syntax: send_loopv <#loop> <generator_type> [disruptor_type_1 ... disruptor_type_n]  [targetID1 ... targetIDN]
+        |_ syntax: send_loopv <#loop> <generator_type> [operator_type_1 ... operator_type_n]  [targetID1 ... targetIDN]
 
         Notes:
             - To loop indefinitely use -1 for #loop. To stop the loop use Ctrl+C
@@ -5470,9 +5470,9 @@ class FmkShell(cmd.Cmd):
 
     def do_replay_db(self, line):
         """
-        Replay data from the FmkDB or the Data Bank and optionnaly apply new disruptors on it
-        |_ syntax for FmkDB: replay_db f<entry_idx> [disruptor_type_1 ... disruptor_type_n] [targetID1 ... targetIDN]
-        |_ syntax for DBank: replay_db d<entry_idx> [disruptor_type_1 ... disruptor_type_n] [targetID1 ... targetIDN]
+        Replay data from the FmkDB or the Data Bank and optionnaly apply new operators on it
+        |_ syntax for FmkDB: replay_db f<entry_idx> [operator_type_1 ... operator_type_n] [targetID1 ... targetIDN]
+        |_ syntax for DBank: replay_db d<entry_idx> [operator_type_1 ... operator_type_n] [targetID1 ... targetIDN]
         """
 
         self.__error = True
@@ -5515,9 +5515,9 @@ class FmkShell(cmd.Cmd):
 
     def do_replay_db_loop(self, line):
         """
-        Loop ( Replay data from the Data Bank and optionnaly apply new disruptors on it )
-        |_ syntax for FmkDB: replay_db_loop <#loop> f<idx_from_db> [disruptor_type_1 ... disruptor_type_n] [targetID1 ... targetIDN]
-        |_ syntax for DBank: replay_db_loop <#loop> d<idx_from_db> [disruptor_type_1 ... disruptor_type_n] [targetID1 ... targetIDN]
+        Loop ( Replay data from the Data Bank and optionnaly apply new operators on it )
+        |_ syntax for FmkDB: replay_db_loop <#loop> f<idx_from_db> [operator_type_1 ... operator_type_n] [targetID1 ... targetIDN]
+        |_ syntax for DBank: replay_db_loop <#loop> d<idx_from_db> [operator_type_1 ... operator_type_n] [targetID1 ... targetIDN]
         """
 
         self.__error = True
@@ -5584,7 +5584,7 @@ class FmkShell(cmd.Cmd):
     def do_show_data_paths(self, line):
         """
         Show the graph paths of the last generated data.
-        Can be used as inputs for some generators or disruptors.
+        Can be used as inputs for some generators or operators.
         """
         self.__error = True
 
@@ -5642,8 +5642,8 @@ class FmkShell(cmd.Cmd):
 
     def do_replay_last(self, line):
         """
-        Replay last data and optionnaly apply new disruptors on it
-        |_ syntax: replay_last [disruptor_type_1 ... disruptor_type_n] [targetID1 ... targetIDN]
+        Replay last data and optionnaly apply new operators on it
+        |_ syntax: replay_last [operator_type_1 ... operator_type_n] [targetID1 ... targetIDN]
         """
 
         self.__error = True
@@ -5720,7 +5720,7 @@ class FmkShell(cmd.Cmd):
     def do_register_db(self, line):
         """
         Register in the data bank the python-evaluation of the parameter <data>
-        This can then be used as a seed in a disruptors chain
+        This can then be used as a seed in a operators chain
         |_ syntax: register_db <data>
         """
         self.__error_msg = "Syntax Error!"

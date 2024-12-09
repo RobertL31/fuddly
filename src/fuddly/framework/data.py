@@ -683,26 +683,26 @@ class DataProcess(object):
         Describe a process to generate a data.
 
         Args:
-            process (list): List of disruptors (possibly complemented by parameters) to apply to
-              a ``seed``. However, if the list begin with a generator, the disruptor chain will apply
+            process (list): List of operators (possibly complemented by parameters) to apply to
+              a ``seed``. However, if the list begin with a generator, the operator chain will apply
               to the outcome of the generator. The generic form for a process is:
               ``[action_1, (action_2, UI_2), ... action_n]``
               where ``action_N`` can be either: ``dmaker_type_N`` or ``(dmaker_type_N, dmaker_name_N)``
             seed: (Optional) Can be a registered :class:`framework.data_model.Node` name or
-              a :class:`framework.data_model.Data`. Will be provided to the first disruptor in
-              the disruptor chain (described by the parameter ``process``) if it does not begin
+              a :class:`framework.data_model.Data`. Will be provided to the first operator in
+              the operator chain (described by the parameter ``process``) if it does not begin
               with a generator.
             tg_ids (list): Virtual ID list of the targets to which the outcomes of this data process will be sent.
               If ``None``, the outcomes will be sent to the first target that has been enabled.
               In the context of scenario, it embeds virtual IDs.
             auto_regen (boolean): If ``True``, the data process will be in a state requesting the framework to
-              rerun the data maker chain after a disruptor yielded (meaning it is exhausted with
+              rerun the data maker chain after a operator yielded (meaning it is exhausted with
               the data provided to it).
               It will make the chain going on with new data coming either from the first
-              non-exhausted disruptor (preceding the exhausted one), or from the generator if
-              all disruptors are exhausted.
+              non-exhausted operator (preceding the exhausted one), or from the generator if
+              all operators are exhausted.
               If ``False``, the data process won't be in this state and the
-              framework won't rerun the data maker chain once a disruptor yield.
+              framework won't rerun the data maker chain once a operator yield.
               It means the framework will alert about this issue to the end-user, or when used
               within a Scenario, it will redirect the decision to the scenario itself (this condition
               may trigger a transition in the scenario).

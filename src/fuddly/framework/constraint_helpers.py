@@ -261,7 +261,7 @@ class CSP(object):
             if self.z3_problem:
                 v_type = self._var_types.get(var)
                 if isinstance(domain[0], bytes) and (v_type is None or v_type == z3.Int):
-                    # This inconsistency can happen when a disruptor play with the domain of a node
+                    # This inconsistency can happen when a operator play with the domain of a node
                     # which is normally a vt.INT and replace it temporarily for the generated
                     # fuzzing cases by a vt.String.
                     self._z3vars[var] = z3.String(var)
@@ -372,7 +372,7 @@ class CSP(object):
                 try:
                     z3formula = eval(c.relation)
                 except z3types.Z3Exception:
-                    # this case can happen if some variable types have been changed by a disruptor
+                    # this case can happen if some variable types have been changed by a operator
                     # to generate specific test cases. (For instance tTYPE will change a vt.INT into
                     # a vt.String to add specific cases mixing integers and separators.)
                     # In such cases, it does not make sense to add a constraint anyway.

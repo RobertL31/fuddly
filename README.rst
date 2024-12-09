@@ -22,7 +22,7 @@ List of features
   - target abstraction
   - monitoring means based on independant probes
   - replay & logging
-  - data manipulation based on disruptors (objects that implement
+  - data manipulation based on operators (objects that implement
     specific data transformation)
   - scenario infrastructure (for modeling protocol logic)
   - virtual directors

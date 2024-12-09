@@ -85,7 +85,7 @@ class Logger(object):
           enable_term_display (bool): If True, information will be displayed on the terminal
           prefix (str): prefix to use for printing on the console.
           enable_file_logging (bool): If True, file logging will be enabled.
-          highlight_marked_nodes (bool): If True, alteration performed by compatible disruptors
+          highlight_marked_nodes (bool): If True, alteration performed by compatible operators
             will be highlighted. Only possible if `export_raw_data` is False, as this option forces
             data interpretation.
         """
@@ -767,15 +767,15 @@ class Logger(object):
             self._current_src_data_id = data_id
         self.log_fn(msg, rgb=Color.DISABLED if disabled else Color.DATAINFO)
 
-    def log_disruptor_info(self, dmaker_type, name, user_input):
+    def log_operator_info(self, dmaker_type, name, user_input):
         if user_input:
-            msg = " |- disruptor type: %s | disruptor name: %s | User input: %s" % (
+            msg = " |- operator type: %s | operator name: %s | User input: %s" % (
                 dmaker_type,
                 name,
                 user_input,
             )
         else:
-            msg = " |- disruptor type: %s | disruptor name: %s | No user input" % (
+            msg = " |- operator type: %s | operator name: %s | No user input" % (
                 dmaker_type,
                 name,
             )

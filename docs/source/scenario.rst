@@ -14,7 +14,7 @@ Once a `scenario` has been defined and registered (refer to :ref:`scenario-desc`
 ``Fuddly`` will automatically create a specific `Generator` that comply to what you described.
 
 .. note:: The ``Fuddly`` shell command ``show_dmaker_types`` displays all the data maker,
-  `Generators` and `Disruptors`. The Generators which are backed by a scenario are prefixed by
+  `Generators` and `Operators`. The Generators which are backed by a scenario are prefixed by
   ``SC_``.
 
 A `scenario` is a state-machine. Its description follows an oriented graph where the nodes, called
@@ -83,8 +83,8 @@ in the context of a project will be the same except for the scenarios registrati
 available within the framework.
 
 In our example, the registration goes through the special object ``tactics`` (line 4) of ``tuto_strategy.py``
-which is usually used to register the data makers (`disruptors` or
-`generators`) specific to a data model (refer to :ref:`tuto:disruptors` for details), but also used
+which is usually used to register the data makers (`operators` or
+`generators`) specific to a data model (refer to :ref:`tuto:operators` for details), but also used
 to register scenarios as shown in line 20.
 
 From line 9 to 13 we define 4 :class:`fuddly.framework.scenario.Step`:
@@ -130,7 +130,7 @@ the name ``SC_EX1``. The `scenario` is then linked to the initial `step` in line
 
    This parameter can be filled with any object. Anyway, the preferable object class to use is
    :class:`fuddly.framework.global_resources.UI` which is the container class also used to pass parameters
-   to ``Generators`` and ``Disruptors``.
+   to ``Generators`` and ``Operators``.
 
 The execution of this scenario will follow the pattern::
 
@@ -475,26 +475,26 @@ is described by a `data descriptor` which can be:
 - a :class:`fuddly.framework.data.DataProcess`.
 
 
-A :class:`fuddly.framework.data.DataProcess` is composed of a chain of generators and/or disruptors
-(with or without parameters) and optionally a ``seed`` on which the chain of disruptor will be applied to (if no
+A :class:`fuddly.framework.data.DataProcess` is composed of a chain of generators and/or operators
+(with or without parameters) and optionally a ``seed`` on which the chain of operator will be applied to (if no
 generator is provided at the start of the chain).
 
-A :class:`fuddly.framework.data.DataProcess` can trigger the end of the scenario if a disruptor in the
+A :class:`fuddly.framework.data.DataProcess` can trigger the end of the scenario if a operator in the
 chain yields (meaning it has terminated its job with the provided data: it is *exhausted*).
 If you prefer that the scenario goes on, then
 you have to set the ``auto_regen`` parameter to ``True``. In such a case, when the step embedding
 the data process will be reached again, the framework will rerun the chain. This action will reset
-the exhausted disruptor and make new data available to it (by pulling data from preceding data makers
+the exhausted operator and make new data available to it (by pulling data from preceding data makers
 in the chain or by using the *seed* again).
 
 Additional *data maker chains* can be added to a :class:`fuddly.framework.data.DataProcess` thanks to
 :meth:`fuddly.framework.data.DataProcess.append_new_process`. Switching from the current process to the
-next one is carried out when the current one is interrupted by a yielding disruptor.
+next one is carried out when the current one is interrupted by a yielding operator.
 Note that in the case the data process has its
 ``auto_regen`` parameter set to ``True``, the current interrupted chain won't be rerun until every other
 chain has also get a chance to be executed.
 
-.. seealso:: Refer to :ref:`tuto:dmaker-chain` for more information on disruptor chaining.
+.. seealso:: Refer to :ref:`tuto:dmaker-chain` for more information on operator chaining.
 
 .. note:: It follows the same pattern as the instructions that can set a virtual director
    (:ref:`tuto:director`). It is actually what the method :meth:`fuddly.framework.plumbing.FmkPlumbing.process_data`
@@ -730,13 +730,13 @@ This approach follow the same pattern than the approach :ref:`sc:cond-fuzz` (mea
 to be altered will trigger the generation of a scenario altering that step while the other steps
 will remain untouched).
 The follwing figure depicts the third call to the generator where the scenario run through
-the ``request`` step, but, contrary to the original scenario, some disruptors has been added, namely ``tTYPE``
-and ``tSTRUCT`` (refer to :ref:`dis:generic-disruptors` for more information on them). Thus, instead
+the ``request`` step, but, contrary to the original scenario, some operators has been added, namely ``tTYPE``
+and ``tSTRUCT`` (refer to :ref:`dis:generic-operators` for more information on them). Thus, instead
 of sending the correct ``request`` data, an altered version (handled firstly by ``tTYPE``) will be sent.
 The scenario will then go back to the ``init`` step by taking the reinitialization path,
 in order to send the next altered
 data that ``tTYPE`` can produce with the ``request`` input. This loop will continue until the ``tTYPE``
-disruptor exhausts, then the ``tSTRUCT`` disruptor will take over until exhaustion.
+operator exhausts, then the ``tSTRUCT`` operator will take over until exhaustion.
 
 .. figure::  images/sc_ex4_data_fuzz_tc1.png
     :align:   center

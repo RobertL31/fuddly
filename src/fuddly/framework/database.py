@@ -862,13 +862,13 @@ class Database(object):
                         msg += colorize(str(data_type), rgb=Color.FMKSUBINFO)
                         sid += 1
                         msg += colorize("\n Step #{:d}:".format(sid), rgb=Color.FMKINFOGROUP)
-                        msg += handle_dmaker('Disruptor', info, dmk_type, dmk_name, len(data_type), ui)
+                        msg += handle_dmaker('Operator', info, dmk_type, dmk_name, len(data_type), ui)
                     else:
                         msg += handle_dmaker('Generator', info, dmk_type, dmk_name, name_sep_sz, ui,
                                              id_src=id_src)
                 else:
                     msg += colorize("\n Step #{:d}:".format(sid), rgb=Color.FMKINFOGROUP)
-                    msg += handle_dmaker('Disruptor', info, dmk_type, dmk_name, name_sep_sz, ui)
+                    msg += handle_dmaker('Operator', info, dmk_type, dmk_name, name_sep_sz, ui)
                 sid += 1
             msg += colorize('\n' + line_pattern, rgb=Color.NEWLOGENTRY)
             prt(msg)
