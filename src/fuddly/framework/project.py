@@ -97,6 +97,7 @@ class Project(object):
 
         self._fmkops = None
         self.project_scenarios = None
+        self.project_operators = None
         self.evol_processes = None
         self.targets = None
         self.dm = None
@@ -200,6 +201,11 @@ class Project(object):
         if self.evol_processes is None:
             self.evol_processes = []
         self.evol_processes += processes
+
+    def register_operators(self, *operators):
+        if self.project_operators is None:
+            self.project_operators = []
+        self.project_operators += operators
 
     def register_director(self, name, obj):
         if name in self.directors:

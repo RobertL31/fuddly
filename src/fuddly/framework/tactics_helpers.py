@@ -80,6 +80,27 @@ class Tactics(object):
             self.register_new_generator(gen_cls_name, gen, weight=1, dmaker_type=dmaker_type,
                                         valid=True)
 
+    @staticmethod
+    def operator_ref_from(op):
+        return op.op_type if op.op_type is not None else op.__class__.__name__
+
+    def register_operators(self, *operators):
+        for op_cls in operators:
+            op_type = self.operator_ref_from(op_cls)
+            valid = op_cls.valid if op_cls.valid is not None else True
+            if op_cls.args is None:
+                op_cls._args_desc = {}
+            else:
+                op_cls._args_desc = op_cls.args
+            op_obj = op_cls()
+            if issubclass(op_cls, StatefulDisruptor):
+                op_obj.set_attr(DataMakerAttr.Controller)
+            op_cls_name = op_cls.__class__.__name__
+
+            self.register_new_disruptor(op_cls_name, op_obj, weight=1, dmaker_type=op_type,
+                                        valid=valid)
+
+
     def __register_new_data_maker(self, dict_var, name, obj, weight, dmaker_type, valid):
         if dmaker_type not in dict_var:
             dict_var[dmaker_type] = {}
@@ -1025,6 +1046,7 @@ class Disruptor(DataMaker):
 
     op_type = None
     valid = None
+    args = None
 
     def __init__(self):
         DataMaker.__init__(self)
@@ -1098,6 +1120,7 @@ class StatefulDisruptor(DataMaker):
 
     op_type = None
     valid = None
+    args = None
 
     def __init__(self):
         DataMaker.__init__(self)

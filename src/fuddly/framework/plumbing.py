@@ -1284,6 +1284,11 @@ class FmkPlumbing(object):
 
                 if self.prj.project_scenarios:
                     self._generic_tactics.register_scenarios(*self.prj.project_scenarios)
+
+                if self.prj.project_operators:
+                    self._generic_tactics.register_operators(*self.prj.project_operators)
+
+                if self.prj.project_scenarios or self.prj.project_operators:
                     self._fmkDB_insert_dm_and_dmakers("generic", self._generic_tactics)
 
                 if need_monitoring:
@@ -1300,10 +1305,16 @@ class FmkPlumbing(object):
     def _stop_fmk_plumbing(self):
         self.flush_errors()
 
-        if self.prj and self.prj.project_scenarios:
-            for sc_ref in [Tactics.scenario_ref_from(sc) for sc in self.prj.project_scenarios]:
-                if sc_ref in self._generic_tactics.generators:
-                    del self._generic_tactics.generators[sc_ref]
+        if self.prj:
+            if self.prj.project_scenarios:
+                for sc_ref in [Tactics.scenario_ref_from(sc) for sc in self.prj.project_scenarios]:
+                    if sc_ref in self._generic_tactics.generators:
+                        del self._generic_tactics.generators[sc_ref]
+
+            if self.prj.project_operators:
+                for op_ref in [Tactics.operator_ref_from(op) for op in self.prj.project_operators]:
+                    if op_ref in self._generic_tactics.disruptors:
+                        del self._generic_tactics.disruptors[op_ref]
 
         if self._is_started():
             if self.is_target_enabled():
