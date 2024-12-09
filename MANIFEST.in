@@ -1,2 +1,3 @@
 graft src/fuddly/imported_data/
+graft src/fuddly/cli/templates/
 include src/fuddly/framework/fmk_db.sql
