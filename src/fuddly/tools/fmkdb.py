@@ -32,6 +32,7 @@ from fuddly.framework.database import Database
 from fuddly.framework.global_resources import get_user_input
 from fuddly.libs.external_modules import *
 from fuddly.framework.plumbing import *
+from fuddly.libs.external_modules import colorize
 
 import argparse
 
@@ -134,7 +135,7 @@ group.add_argument('--disprove-impact', nargs=2, metavar=('FIRST_ID', 'LAST_ID')
                    '--data-with-impact-raw'. The group is determined by providing the smaller data ID 
                    (FIRST_ID) and the bigger data ID (LAST_ID).''')
 
-def handle_confirmation():
+def handle_confirmation(fmkdb):
     try:
         cont = get_user_input(colorize("\n*** Press [ENTER] to continue ('C' to CANCEL) ***\n",
                                        rgb=Color.PROMPT))
@@ -149,7 +150,7 @@ def handle_confirmation():
             fmkdb.stop()
             sys.exit(-1)
 
-def handle_date(date_str):
+def handle_date(date_str, fmkdb):
     try:
         date = datetime.datetime.strptime(date_str, "%Y/%m/%d")
     except ValueError:
@@ -169,9 +170,9 @@ def handle_date(date_str):
 def main():
     args = parser.parse_args()
 
-    fmkdb = args.fmkdb
-    if fmkdb is not None and not os.path.isfile(fmkdb):
-        print(colorize("*** ERROR: '{:s}' does not exist ***".format(fmkdb), rgb=Color.ERROR))
+    fmkdb_path = args.fmkdb
+    if fmkdb_path is not None and not os.path.isfile(fmkdb_path):
+        print(colorize("*** ERROR: '{:s}' does not exist ***".format(fmkdb_path), rgb=Color.ERROR))
         sys.exit(-1)
 
     verbose = args.verbose
@@ -227,7 +228,7 @@ def main():
         dm_list = None
         decoding_hints = None
 
-    fmkdb = Database(fmkdb_path=fmkdb)
+    fmkdb = Database(fmkdb_path=fmkdb_path)
     ok = fmkdb.start()
     if not ok:
         print(colorize("*** ERROR: The database {:s} is invalid! ***".format(fmkdb.fmk_db_path),
@@ -282,8 +283,8 @@ def main():
 
     elif data_info_by_date is not None:
 
-        start = handle_date(data_info_by_date[0])
-        end = handle_date(data_info_by_date[1])
+        start = handle_date(data_info_by_date[0], fmkdb)
+        end = handle_date(data_info_by_date[1], fmkdb)
 
         fmkdb.display_data_info_by_date(start, end, with_data=with_data, with_fbk=with_fbk,
                                         with_fmkinfo=not without_fmkinfo,
@@ -314,7 +315,7 @@ def main():
             fmkdb.export_data(first=export_one_data, colorized=colorized)
 
     elif remove_data is not None or remove_one_data is not None:
-        handle_confirmation()
+        handle_confirmation(fmkdb)
         if remove_data is not None:
             for i in range(remove_data[0], remove_data[1]+1):
                 fmkdb.remove_data(i, colorized=colorized)

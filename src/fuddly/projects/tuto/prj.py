@@ -93,4 +93,3 @@ project.register_evolutionary_processes(
       'max_generation_nb': 3,
       'crossover_algo': CrossoverHelper.get_configured_crossover_algo2()})
 )
-

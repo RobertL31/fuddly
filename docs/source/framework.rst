@@ -168,10 +168,10 @@ framework.project module
     :exclude-members: __dict__, __weakref__
 
 
-framework.operator_helpers module
+framework.director_helpers module
 ---------------------------------
 
-.. automodule:: fuddly.framework.operator_helpers
+.. automodule:: fuddly.framework.director_helpers
     :members:
     :undoc-members:
     :show-inheritance:

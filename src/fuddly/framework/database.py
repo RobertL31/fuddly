@@ -517,7 +517,8 @@ class Database(object):
         self.submit_sql_stmt(stmt, params=params, error_msg=err_msg)
 
 
-    def insert_feedback(self, data_id, source, timestamp, content, status_code=None):
+    def insert_feedback(self, data_id, source, timestamp, content, status_code=None,
+                        store_in_db=True):
 
         if self.feedback_trail_init_ts is None:
             self.feedback_trail_init_ts = timestamp
@@ -552,14 +553,15 @@ class Database(object):
         if not self.enabled:
             return None
 
-        if content:
-            content = sqlite3.Binary(content)
+        if store_in_db:
+            if content:
+                content = sqlite3.Binary(content)
 
-        stmt = "INSERT INTO FEEDBACK(DATA_ID,SOURCE,DATE,CONTENT,STATUS)"\
-               " VALUES(?,?,?,?,?)"
-        params = (data_id, str(source), timestamp, content, status_code)
-        err_msg = 'while inserting a value into table FEEDBACK!'
-        self.submit_sql_stmt(stmt, params=params, error_msg=err_msg)
+            stmt = "INSERT INTO FEEDBACK(DATA_ID,SOURCE,DATE,CONTENT,STATUS)"\
+                   " VALUES(?,?,?,?,?)"
+            params = (data_id, str(source), timestamp, content, status_code)
+            err_msg = 'while inserting a value into table FEEDBACK!'
+            self.submit_sql_stmt(stmt, params=params, error_msg=err_msg)
 
 
     def iter_feedback_entries(self, last=True, source=None):

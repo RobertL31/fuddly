@@ -496,8 +496,8 @@ chain has also get a chance to be executed.
 
 .. seealso:: Refer to :ref:`tuto:dmaker-chain` for more information on disruptor chaining.
 
-.. note:: It follows the same pattern as the instructions that can set a virtual operator
-   (:ref:`tuto:operator`). It is actually what the method :meth:`fuddly.framework.plumbing.FmkPlumbing.process_data`
+.. note:: It follows the same pattern as the instructions that can set a virtual director
+   (:ref:`tuto:director`). It is actually what the method :meth:`fuddly.framework.plumbing.FmkPlumbing.process_data`
    takes as parameters.
 
 Here under examples of steps leveraging the different ways to describe their data to send.

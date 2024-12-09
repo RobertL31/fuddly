@@ -74,7 +74,7 @@ Note that ``fuddly`` looks for *Data Model* files (within
 ``data_models/``) and *Project* files (within ``projects/``) during
 its initialization. A *Project* file is used to describe the targets
 that can be tested, the logger behaviour, and optionally specific
-monitoring means as well as some scenarios and/or virtual operators.
+monitoring means as well as some scenarios and/or virtual directors.
 
 .. note::
 
@@ -747,8 +747,8 @@ You can also reset all the data makers at once by issuing the following command:
 
 
 Another way that can reveal itself to be useful (especially within
-:class:`fuddly.framework.tactics_helper.Operator`--- refer to
-:ref:`tuto:operator`) is to clone a data maker. By doing so, you have
+:class:`fuddly.framework.director_helper.Director`--- refer to
+:ref:`tuto:director`) is to clone a data maker. By doing so, you have
 a new independent data maker that can be used in another *data maker
 chain*. To create a clone, just add ``#ID`` (where ``ID`` shall be
 replaced by a string up to 20 alphanumeric characters or underscore)
@@ -770,7 +770,7 @@ data model without restarting ``fuddly``, you can simply edit the data
 model with your favorite editor, and after saving it, issue the
 command ``reload_data_model`` at the ``Fuddly Shell`` prompt.
 
-If you also want to modify the target abstraction or operators or
+If you also want to modify the target abstraction or directors or
 probes, ..., you have to reload every fuddly subsystems. To do so, you
 only need to issue the command ``reload_all``.
 
@@ -784,21 +784,21 @@ already launched, simply issue the command ``load_data_model
 <data_model_name>`` to let fuddly do the job for you.
 
 
-Use an Operator to Send Malformed Data
---------------------------------------
+Use a Director to Send Malformed Data
+-------------------------------------
 
-``Operators`` (\ :class:`fuddly.framework.tactics_helper.Operator`) are useful
+``Directors`` (\ :class:`fuddly.framework.director_helpers.Director`) are useful
 to automate the fuzzing process, that is to automatically collect
 target feedback when its worth it, to automatically save test cases
 that affect the target and to automatically decide on the following
 steps based on thoughtful criteria.
 
-Let's take the example of a fuzzing operator defined in the
+Let's take the example of a fuzzing director defined in the
 ``standard`` project, and use it to fuzz JPG files and send them to
 the ``display`` program---target number 3.
 
-.. seealso:: To define your own operators refer to
-             :ref:`tuto:operator`.
+.. seealso:: To define your own directors refer to
+             :ref:`tuto:director`.
 
 First, we need to launch the project ``standard`` and to specify the
 target number 3. You can do it in one line by issuing the following
@@ -820,29 +820,29 @@ You can now load the JPG data model::
 
   >> load_data_model jpg
 
-Then, you can look at the available operators and learn about their
+Then, you can look at the available directors and learn about their
 parameters by issuing the command::
 
-  >> show_operators
+  >> show_directors
 
-This command will display the `following <#operator-show>`_:
+This command will display the `following <#director-show>`_:
 
-.. _operator-show:
-.. figure::  images/operator_show.png
+.. _director-show:
+.. figure::  images/director_show.png
    :align:   center
 
-To launch the operator ``Op1`` and limit to 5 the number of test cases to
+To launch the director ``Dir1`` and limit to 5 the number of test cases to
 run, issue the command::
 
-  >> launch_operator Op1(max_steps=5)
+  >> launch_director Dir1(max_steps=5)
 
-This will trigger the Operator that will execute the ``display``
+This will trigger the Director that will execute the ``display``
 program with the first generated JPG file. It will look at ``stdout``
 and ``stderr`` for error messages, or look for any crashes, and if
 such a situation occurs, will save the related JPG file under
 ``exported_data/jpg/`` and log everything under ``logs/``. It will
 also try to avoid saving JPG files that trigger errors whose type has
-already been seen. Once the operator is all done with this first test
+already been seen. Once the director is all done with this first test
 case, it can plan the next actions it needs ``fuddly`` to perform for
 it. In our case, it will go on with the next iteration of a disruptor
 chain, basically ``JPG(finite=True) tTYPE``.
@@ -1873,7 +1873,7 @@ Two compementary options are provided by the framework:
 - The `Scenario Infrastructure` that enables you to have access to automatically-created
   `Generators` that comply to the protocols you described. Refer to :ref:`scenario-infra`.
 
-- The definition of `Virtual Operators`. refer to :ref:`tuto:operator`
+- The definition of `Virtual Directors`. refer to :ref:`tuto:director`
 
 
 .. _tuto:disruptors:
@@ -2132,7 +2132,7 @@ Defining a Project Environment
 ------------------------------
 
 The environment---composed of at least one target, a logger, and
-optionnaly some monitoring means and virtual operators---is setup
+optionnaly some monitoring means and virtual directors---is setup
 within a project file located within ``<root of fuddly>/projects/`` or within
 ``<fuddly data folder>/user_projects/``. To illustrate that let's
 show the beginning of ``generic/standard.py``:
@@ -2143,7 +2143,7 @@ show the beginning of ``generic/standard.py``:
 
    from fuddly.framework.project import *
    from fuddly.framework.monitor import *
-   from fuddly.framework.operator_helpers import *
+   from fuddly.framework.director_helpers import *
    from fuddly.framework.plumbing import *
    import fuddly.framework.global_resources as gr
 
@@ -2193,7 +2193,7 @@ and optionally:
   :meth:`fuddly.framework.project.Project.register_scenarios`
 - probes (:ref:`tuto:probes`)
 - tasks (:ref:`tuto:tasks`)
-- operators (:ref:`tuto:operator`)
+- directors (:ref:`tuto:director`)
 
 A default data model or a list of data models can be added to the
 project through its attribute ``default_dm``. ``fuddly`` will use this
@@ -2304,36 +2304,36 @@ Some parameters allows to customize the behavior of the logger, such as:
   This parameter does not interfere with data recording within ``FmkDB``.
 
 - ``explicit_data_recording``: which is used for logging outcomes further to
-  an :class:`fuddly.framework.operator_helpers.Operator` instruction. If set to
-  ``True``, the operator would have to state explicitly if it wants
+  an :class:`fuddly.framework.director_helpers.Director` instruction. If set to
+  ``True``, the director would have to state explicitly if it wants
   the just emitted data to be recorded. Such instruction is typically
   used within its method
-  :meth:`fuddly.framework.operator_helpers.Operator.do_after_all()`, where the
-  Operator can take its decision after the observation of the target
+  :meth:`fuddly.framework.director_helpers.Director.do_after_all()`, where the
+  Director can take its decision after the observation of the target
   feedback and/or probes outputs.
 
 - ``enable_file_logging`` which is used to control the production of log files.
   If set to ``False``, the Logger will only commit records to the ``FmkDB``.
 
-.. seealso:: Refer to :ref:`tuto:operator` to learn more about the
-             interaction between an Operator and the Logger.
+.. seealso:: Refer to :ref:`tuto:director` to learn more about the
+             interaction between a Director and the Logger.
 
 
 
-.. _tuto:operator:
+.. _tuto:director:
 
-Defining Operators
+Defining Directors
 ++++++++++++++++++
 
-In order to automatize what a human operator could perform to interact
+In order to automatize what a human director could perform to interact
 with one or more targets, the abstracted class
-:class:`fuddly.framework.operator_helpers.Operator` can be inherited. The purpose
-of this class is to give you the opportunity to plan the operations
+:class:`fuddly.framework.director_helpers.Director` can be inherited. The purpose
+of this class is to give you the opportunity to plan the instructions
 you want to perform on the target (data type to send, type of
 modifications to perform on data before sending it, and so on). Thus,
 you could embeds all the protocol logic to be able to adapt the
 fuzzing strategy based on various criteria---*e.g.*, monitoring
-feedback, operator choices, and so on. By default, the operator is
+feedback, director choices, and so on. By default, the director is
 recalled after each data emission to the target, but it can also
 provide to ``fuddly`` a batch of instructions, that will be executed prior
 to its recall. You have also the ability to stimulate the target
@@ -2355,23 +2355,23 @@ process.
   state machine library such as `toysm <https://github.com/willakat/toysm>`_ should do.
 
 
-To define an operator you have to define a class that inherits from
-:class:`fuddly.framework.operator_helpers.Operator`. Then, to register it within
-your project, the decorator ``@operator`` has to be used with at least
+To define a director you have to define a class that inherits from
+:class:`fuddly.framework.director_helpers.Director`. Then, to register it within
+your project, the decorator ``@director`` has to be used with at least
 the reference of the project as the first parameter.
 
-.. seealso:: Parameters can be defined for an operator, in order to
+.. seealso:: Parameters can be defined for an director, in order to
              make it more customizable. The way to describe them is
              the same as for *disruptors*. Look into the file
              ``projects/generic/standard.py`` for some examples.
 
-Here under is presented a skeleton of an Operator:
+Here under is presented a skeleton of a Director:
 
 .. code-block:: python
    :linenos:
 
-   @operator(project)
-   class MyOperator(Operator):
+   @director(project)
+   class MyDirector(Director):
 
        def start(self, fmk_ops, dm, monitor, target, logger, user_input):
            # Do some initialization stuff
@@ -2380,18 +2380,18 @@ Here under is presented a skeleton of an Operator:
        def stop(self, fmk_ops, dm, monitor, target, logger):
            # Do some termination stuff
 
-       def plan_next_operation(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
-    	   op = Operation()
+       def plan_next_instruction(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
+    	   inst = Instruction()
 	   
     	   # Do some planning stuff and decide what would be the next
-    	   # operations you want fuddly to perform
+    	   # instructions you want fuddly to perform
 
-    	   return op
+    	   return inst
 
        def do_after_all(self, fmk_ops, dm, monitor, target, logger):
     	   linst = LastInstruction()
 
-           # Do some stuff after the planned Operation() has been
+           # Do some stuff after the planned Instruction() has been
            # executed and request fuddly to perform some last-minute
            # instructions.
 
@@ -2399,31 +2399,31 @@ Here under is presented a skeleton of an Operator:
 
 
 
-The methods :meth:`fuddly.framework.operator_helpers.Operator.start()` and
-:meth:`fuddly.framework.operator_helpers.Operator.stop()` are the obvious ones
+The methods :meth:`fuddly.framework.director_helpers.Director.start()` and
+:meth:`fuddly.framework.director_helpers.Director.stop()` are the obvious ones
 that you have to implement if you want to customize the
-initialization and termination of your operator.
+initialization and termination of your director.
 
-The core of your operator will be implemented within the method
-:meth:`fuddly.framework.operator_helpers.Operator.plan_next_operation()` which
-will order ``fuddly`` to perform some operations based on the
-:meth:`fuddly.framework.operator_helpers.Operation` object that you will return
+The core of your director will be implemented within the method
+:meth:`fuddly.framework.director_helpers.Director.plan_next_instruction()` which
+will order ``fuddly`` to perform some actions based on the
+:meth:`fuddly.framework.director_helpers.Instruction` object that you will return
 to it. A basic example illustrating the implementation of this method
 is given here under:
 
 .. code-block:: python
    :linenos:
 
-   def plan_next_operation(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
-       op = Operation()
+   def plan_next_instruction(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
+       inst = Instruction()
 
        if fmk_feedback.is_flag_set(FmkFeedback.NeedChange):
-          op.set_flag(Operation.Stop)
+          inst.set_flag(Instruction.Stop)
        else:
           actions = [('SEPARATOR', UI(determinist=True)), ('tSTRUCT', UI(deep=True))]
-          op.add_instruction(actions)
+          inst.add_instruction(actions)
 
-       return op
+       return inst
 
 We instruct ``fuddly`` to execute a *disruptor chain* made of the
 ``SEPARATOR`` *generator* (transparently created by ``fuddly`` from
@@ -2441,11 +2441,11 @@ re-enabling a previous stateful disruptor or in our case the
              insight into disruptors.
 
 Finally, the method
-:meth:`fuddly.framework.operator_helpers.Operator.do_after_all()` is executed
-by ``fuddly`` after the planned operation has been handled, in order
-for the operator to provide some last-minute instructions related to
-the previous operation. Typically, it is the moment where the operator
-can investigate on the impact of its last operation, before going on
+:meth:`fuddly.framework.director_helpers.Director.do_after_all()` is executed
+by ``fuddly`` after the planned instruction has been handled, in order
+for the director to provide some last-minute instructions related to
+the previous instruction. Typically, it is the moment where the director
+can investigate on the impact of its last instruction, before going on
 with the next one. An example leveraging this method is discussed in
 the following section :ref:`tuto:probes`.
 
@@ -2453,7 +2453,7 @@ the following section :ref:`tuto:probes`.
           parameters provided by ``fuddly`` when it calls them:
 
 	  - ``fmk_ops``: an object that exports ``fuddly``'s specific
-            methods to the operator, more precisely it is a reference
+            methods to the director, more precisely it is a reference
             to :class:`fuddly.framework.plumbing.ExportableFMKOps`.
 
 	  - ``dm``: a reference to the current
@@ -2467,7 +2467,7 @@ the following section :ref:`tuto:probes`.
 	  - ``logger``: a reference to the logger.
 
 	  - ``fmk_feedback``: an object that provides feedback from
-            ``fuddly`` to the operator about the last operation it
+            ``fuddly`` to the director about the last instruction it
             performed. The class of this object is
             :class:`fuddly.framework.plumbing.FmkFeedback`.
 
@@ -2573,7 +2573,7 @@ It will display for each target the data you sent for which a negative
 status has been recorded, coming either from:
 
 - a probe;
-- an operator (more about that in what follows);
+- a director (more about that in what follows);
 - or the :class:`fuddly.framework.target_helpers.Target` itself (refer to the error status
   that are transmitted by the generic targets---:ref:`targets`).
 
@@ -2604,15 +2604,15 @@ containing the probe itself and the delay expressed in seconds. Here under an ex
                (B, (my_first_probe, 0.6)) ]
 
 
-Finally, you can also leverage probes from within an Operator. If you want to get a status
-from probes each time your planned operations have been executed by ``fuddly``, you can do
-it within the method :meth:`fuddly.framework.operator_helpers.Operator.do_after_all()`.
+Finally, you can also leverage probes from within a Director. If you want to get a status
+from probes each time your planned instructions have been executed by ``fuddly``, you can do
+it within the method :meth:`fuddly.framework.director_helpers.Director.do_after_all()`.
 Let's illustrate this with the following example:
 
 .. code-block:: python
    :linenos:
 
-   class MyOperator(Operator):
+   class MyDirector(Director):
 
        def start(self, fmk_ops, dm, monitor, target, logger, user_input):
            if not monitor.is_probe_launched(health_check):
@@ -2622,33 +2622,33 @@ Let's illustrate this with the following example:
        def stop(self, fmk_ops, dm, monitor, target, logger):
            monitor.stop_probe(health_check)
 
-       def plan_next_operation(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
-           self.op = Operation()
+       def plan_next_instruction(self, fmk_ops, dm, monitor, target, logger, fmk_feedback):
+           self.inst = Instruction()
 
            # Let's say the actions to be performed
            # are guided by a state machine
-           self.op_state = ... # save the current state of the operator
+           self.inst_state = ... # save the current state of the director
 
-           return self.op
+           return self.inst
 
        def do_after_all(self, fmk_ops, dm, monitor, target, logger):
             linst = LastInstruction()
 
             health_status = monitor.get_probe_status(health_check)
 
-            if health_status.value < 0 and self.op_state == 'critical':
+            if health_status.value < 0 and self.inst_state == 'critical':
                 linst.set_instruction(LastInstruction.RecordData)
-                linst.set_operator_feedback('Data sent seems worthwhile!')
-                linst.set_operator_status(-3)
+                linst.set_director_feedback('Data sent seems worthwhile!')
+                linst.set_director_status(-3)
 
             return linst
 
 
-In this example, the operator retrieves the status of our
+In this example, the director retrieves the status of our
 *health-check* probe and also check what was just performed.
 It then correlates both information in order to determine if the test case
 is worth to investigate further.
-In our example, it occurs when the *health check* is negative and our operator
+In our example, it occurs when the *health check* is negative and our director
 state is ``'critical'``. In such situation, we first order ``fuddly`` to
 record the data (line 26).
 
@@ -2658,13 +2658,13 @@ record the data (line 26).
     have to instruct explicitly ``fuddly`` to do it if you want to keep
     the data, otherwise it will never be logged.
 
-Finally we convey the operator verdict to
-``fuddly`` through the :class:`fuddly.framework.operator_helpers.LastInstruction` object
+Finally we convey the director verdict to
+``fuddly`` through the :class:`fuddly.framework.director_helpers.LastInstruction` object
 it returns, by setting a negative status and some feedback on it.
 
 .. note:: Setting a negative status through
-   :class:`fuddly.framework.operator_helpers.LastInstruction` will make ``fuddly`` act the same
-   as for a negative status from a probe. In addition, the operator will be shutdown.
+   :class:`fuddly.framework.director_helpers.LastInstruction` will make ``fuddly`` act the same
+   as for a negative status from a probe. In addition, the director will be shutdown.
 
 .. _tuto:tasks:
 

@@ -45,6 +45,7 @@ class Target(object):
     name = None
     feedback_timeout = None
     sending_delay = 0
+    store_fbk_in_db = True
 
     # tg_id = None  # this is set by FmkPlumbing
 
@@ -148,7 +149,7 @@ class Target(object):
 
         Args:
           from_fmk (bool): set to True if the call was performed by the framework itself,
-            otherwise the call comes from user-code (e.g., from a `probe` or an `operator`)
+            otherwise the call comes from user-code (e.g., from a `probe` or a `director`)
           data (Data): data container that embeds generally a
             modeled data accessible through `data.content`. However if the
             latter is None, it only embeds the raw data.
@@ -164,7 +165,7 @@ class Target(object):
 
         Args:
             from_fmk (bool): set to True if the call was performed by the framework itself,
-              otherwise the call comes from user-code (e.g., from a `Probe` or an `Operator`)
+              otherwise the call comes from user-code (e.g., from a `Probe` or a `Director`)
             data_list (list): list of data to be sent
 
         """
@@ -203,7 +204,7 @@ class Target(object):
     def recover_target(self):
         """
         Implementation of target recovering operations, when a target problem has been detected
-        (i.e. a negative feedback from a probe, an operator or the Target() itself)
+        (i.e. a negative feedback from a probe, a director or the Target() itself)
 
         Returns:
             bool: True if the target has been recovered. False otherwise.

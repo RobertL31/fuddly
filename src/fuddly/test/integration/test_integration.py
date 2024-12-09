@@ -4510,11 +4510,11 @@ class TestFMK(unittest.TestCase):
 
         self.assertEqual(idx, expected_idx)
 
-    def test_operator_1(self):
+    def test_director_1(self):
 
         fmk.reload_all(tg_ids=[7, 8])
 
-        fmk.launch_operator('MyOp', user_input=UI(max_steps=100, mode=1))
+        fmk.launch_director('MyDir', user_input=UI(max_steps=100, mode=1))
         last_data_id = max(fmk.lg._last_data_IDs.values())
         print('\n*** Last data ID: {:d}'.format(last_data_id))
         fmkinfo = fmk.fmkDB.execute_sql_statement(
@@ -4528,22 +4528,22 @@ class TestFMK(unittest.TestCase):
                 break
         else:
             raise ValueError(
-                'the data maker should be exhausted and trigger the end of the operator')
+                'the data maker should be exhausted and trigger the end of the director')
 
     @unittest.skipIf(not run_long_tests, "Long test case")
-    def test_operator_2(self):
+    def test_director_2(self):
 
         fmk.reload_all(tg_ids=[7, 8])
 
-        myop = fmk.get_operator(name='MyOp')
-        fmk.launch_operator('MyOp')
+        mydir = fmk.get_director(name='MyDir')
+        fmk.launch_director('MyDir')
 
-        fbk = fmk.last_feedback_gate.get_feedback_from(myop)[0]['content']
+        fbk = fmk.last_feedback_gate.get_feedback_from(mydir)[0]['content']
         print(fbk)
         self.assertIn(b'You win!', fbk)
 
-        fmk.launch_operator('MyOp')
-        fbk = fmk.last_feedback_gate.get_feedback_from(myop)[0]['content']
+        fmk.launch_director('MyDir')
+        fbk = fmk.last_feedback_gate.get_feedback_from(mydir)[0]['content']
         print(fbk)
         self.assertIn(b'You loose!', fbk)
 
