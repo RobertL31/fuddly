@@ -11,6 +11,7 @@ import argcomplete
 # We are part of fuddly so using an internal function is fine:
 from fuddly.framework.plumbing import _populate_projects as populate_projects
 
+
 def get_scripts() -> list():
     # The function is called for when the CLI is called and if we use the list option
     # having paths be an attribute to the functions means we will not run it twice
@@ -19,7 +20,7 @@ def get_scripts() -> list():
     else:
         get_scripts.paths = []
 
-    project_modules=[]
+    project_modules = []
 
     # User scripts
     projects = populate_projects(gr.user_projects_folder, prefix="user_projects", projects=None)
@@ -48,7 +49,7 @@ def get_scripts() -> list():
     for m in project_modules:
         p = m.origin
         if os.path.basename(p) == "__init__.py":
-            p=os.path.dirname(p)
+            p = os.path.dirname(p)
         else:
             # Ignoring old single-files projects
             continue
@@ -59,17 +60,19 @@ def get_scripts() -> list():
 
     return get_scripts.paths
 
-get_scripts.paths=None
+
+get_scripts.paths = None
+
 
 def script_from_pkg_name(name) -> str:
     # pkg_name.script.name -> ("pkg_name.script", "name.py")
     *pkg, file = name.split('.')
-    file+=".py"
-    pkg=".".join(pkg)
+    file += ".py"
+    pkg = ".".join(pkg)
 
     # User scripts
     if pkg.startswith("fuddly.projects_scripts"):
-        path=os.path.join(gr.fuddly_data_folder, "projects_scripts", file)
+        path = os.path.join(gr.fuddly_data_folder, "projects_scripts", file)
         if os.path.isfile(path):
             return path
         else:
@@ -77,7 +80,7 @@ def script_from_pkg_name(name) -> str:
 
     # Third party/module scripts
     try:
-        path=find_spec(name).origin
+        path = find_spec(name).origin
     except ModuleNotFoundError:
         return None
     except AttributeError:
@@ -107,7 +110,7 @@ def start(args: argparse.Namespace):
         return 0
 
     script = script_from_pkg_name(args.script)
-    if script == None:
+    if script is None:
         print(f"Script {args.script} not foud")
         sys.exit(1)
 
@@ -120,4 +123,3 @@ def start(args: argparse.Namespace):
 
     argv.insert(0, executor)
     os.execvp(executor, argv)
-

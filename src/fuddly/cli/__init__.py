@@ -23,19 +23,19 @@
 ################################################################################
 
 import sys
-import os
 import fuddly.cli.argparse_wrapper as argparse
 import importlib
 
-import argcomplete 
-from argcomplete.completers import ChoicesCompleter, SuppressCompleter
+import argcomplete
 
+# TODO script_argument_completer will be used once a sub-script argument completion logic is developped
 from .run import get_scripts, script_argument_completer
+# TODO tool_argument_completer will be used once a sub-script argument completion logic is developped
 from .tool import get_tools, tool_argument_completer
 
 from typing import List
-from fuddly.cli import * 
 from fuddly.cli.error import CliException
+
 
 def main(argv: List[str] = None):
     # This is done so you can call it from python shell if you want to
@@ -43,7 +43,7 @@ def main(argv: List[str] = None):
     #
     #   main(["run", "some_script", "some", "important args"])
     #    or
-    #   main("run some_script some important args") 
+    #   main("run some_script some important args")
     #
     #   This second for can not have space in the arguments, but so be it...
     #
@@ -51,11 +51,11 @@ def main(argv: List[str] = None):
         case None:
             argv = sys.argv[1:]
         case str():
-            argv=argv.split(" ")
+            argv = argv.split(" ")
 
     parsers = {}
     arg_parser = parsers["main"] = argparse.ArgumentParser(
-            prog="fuddly", 
+            prog="fuddly",
             description="the fuddly cli interface",
             epilog="use 'fuddly <action>' help more information on their arguments",
             exit_on_error=False
@@ -82,8 +82,8 @@ def main(argv: List[str] = None):
             help="limit the information displayed at startup.",
         )
 
-    with (subparsers.add_parser("run", help="run a fuddly project script") as p):
-        # XXX Should you be able to run script from outside the script dir(s?) ?
+    with subparsers.add_parser("run", help="run a fuddly project script") as p:
+        # XXX Should you be able to run script from outside the script dirs?
         parsers["run"] = p
 
         p.add_argument(
@@ -104,7 +104,7 @@ def main(argv: List[str] = None):
             "args",
             nargs=argparse.REMAINDER,
             help="arguments to pass through to the script",
-        ) #.completer = script_argument_completer
+        )  # .completer = script_argument_completer
 
     with subparsers.add_parser("new", help="create a new project or data model") as p:
         parsers["new"] = p
@@ -123,9 +123,9 @@ def main(argv: List[str] = None):
             help="create a python package project structure"
         )
         p.add_argument(
-            "object", 
-            choices=["dm", "data-model", "project:bare", "project:exemple" ], 
-            metavar = "object",
+            "object",
+            choices=["dm", "data-model", "project:bare", "project:exemple"],
+            metavar="object",
             help="type of object to create. [dm, data-model, project]",
         )
         p.add_argument(
@@ -141,11 +141,13 @@ def main(argv: List[str] = None):
             help="name of the tool to launch, the special value \"list\" list available tools",
             choices=["list", *get_tools()],
         )
+        # TODO add arg completion for tools
         p.add_argument(
             "args",
             nargs=argparse.REMAINDER,
             help="arguments to passthrough to the tool",
-        ).completer = tool_argument_completer
+            # TODO Add back when something is implemented
+        )  # .completer = tool_argument_completer
 
     with subparsers.add_parser("workspace", help="manage fuddly's workspace") as p:
         parsers["workspace"] = p
@@ -166,7 +168,7 @@ def main(argv: List[str] = None):
         argcomplete.autocomplete(arg_parser)
         args = arg_parser.parse_args(args=argv)
     except argparse.ArgumentError as e:
-        print(e.message) 
+        print(e.message)
         print()
         arg_parser.print_help()
         return 0

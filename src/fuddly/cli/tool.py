@@ -1,13 +1,17 @@
 import fuddly.cli.argparse_wrapper as argparse
 
+from fuddly.cli.error import CliException
+
 import importlib
 import sys
 import argcomplete
 
+
 def get_tools() -> list():
     import pkgutil
-    tools=importlib.import_module("fuddly.tools")
+    tools = importlib.import_module("fuddly.tools")
     return list(map(lambda x: x.name, pkgutil.walk_packages(tools.__path__)))
+
 
 def tool_argument_completer(prefix, parsed_args, **kwargs):
     # Set _ARC_DEBUG in the shell fro _DEBUG to be true
@@ -20,6 +24,7 @@ def tool_argument_completer(prefix, parsed_args, **kwargs):
     else:
         return []
 
+
 def start(args: argparse.Namespace) -> int:
     if args.tool is None:
         raise CliException("Missing tool name")
@@ -29,7 +34,7 @@ def start(args: argparse.Namespace) -> int:
             print(i)
         return 0
 
-    sys.argv = [ args.tool, *args.args]
+    sys.argv = [args.tool, *args.args]
 
     try:
         pkg = importlib.util.find_spec(f"fuddly.tools.{args.tool}")
