@@ -26,6 +26,8 @@ options.
 	Run on of fuddly's associated tools
 *workspace*
 	Manage the fuddly workspace
+*show*
+    Display the README file of a specified Project
 
 
 Each of these action have a section describing their syntax and they all support
@@ -128,6 +130,14 @@ a *-h* and *--help* options to describe their use from the command line
 		Remove everything from the workspace.
 		This will first list the content of the workspace, then ask for a
 		confirmation before completely removing it and creating a new one.
+
+## SHOW
+
+*fuddly* show project_name
+
+    *project_name*
+        Name of the project whose README file is requested to be displayed.
+
 
 # SEE ALSO
 

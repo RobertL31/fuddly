@@ -32,6 +32,7 @@ import argcomplete
 from .run import get_scripts, script_argument_completer
 # TODO tool_argument_completer will be used once a sub-script argument completion logic is developped
 from .tool import get_tools, tool_argument_completer
+from .show import get_projects
 
 from typing import List
 from fuddly.cli.error import CliException
@@ -162,6 +163,17 @@ def main(argv: List[str] = None):
             action="store_true",
             help="remove everything from the workspace",
         )
+
+    with subparsers.add_parser("show", help="display the README file of a specified Project") as p:
+        parsers["show"] = p
+        group = p.add_argument_group("Miscellaneous Options")
+        group.add_argument(
+            "project",
+            metavar="project",
+            help="name of the project to show, the special value \"list\" list available projects",
+            choices=["list", *map(lambda x: x[0], get_projects())],
+        )
+
 
     # Needed because we set exit_on_error=False in the constructor
     try:
