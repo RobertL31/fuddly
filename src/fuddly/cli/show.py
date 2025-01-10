@@ -6,6 +6,7 @@ from importlib.metadata import entry_points
 import sys
 import os
 import argcomplete
+import importlib
 
 from fuddly.libs.fmk_services import get_each_project_module
 
@@ -34,7 +35,18 @@ def get_projects() -> []:
 get_projects.modules = None
 
 
-def info_from_project_name(name) -> str|None:
+def info_template_from_project_name(name) -> str|None:
+    for prj in get_projects():
+        prj_name, path, m = prj
+        if prj_name == name:
+            info_path = os.path.join(path, "conf.py")
+            if os.path.isfile(info_path):
+                info_mod = m.name + ".conf"
+                return info_mod
+    else:
+        return None
+
+def readme_from_project_name(name) -> (str|None, bool):
     for prj in get_projects():
         prj_name, path, m = prj
         if prj_name == name:
@@ -47,7 +59,7 @@ def info_from_project_name(name) -> str|None:
 
 def start(args: argparse.Namespace) -> int:
     if args.project is None:
-        raise CliException("Missing tool name")
+        raise CliException("Missing project name")
 
     if args.project == "list":
         for prj in get_projects():
@@ -55,12 +67,24 @@ def start(args: argparse.Namespace) -> int:
             print(name)
         return 0
 
-    info_path = info_from_project_name(args.project)
-    if info_path is None:
+    readme_path = readme_from_project_name(args.project)
+    if readme_path is None:
         print(f"{args.project} does not have a README file")
-        sys.exit(1)
     else:
-        with open(info_path, 'r') as f:
+        with open(readme_path, 'r') as f:
             buff = f.read()
             print(buff)
-        return 0
+
+    info_mod = info_template_from_project_name(args.project)
+    if info_mod is None:
+        print(f"{args.project} does not have a conf.py file")
+    else:
+        info_mod = importlib.import_module(info_mod)
+        try:
+            print(info_mod.INFO)
+        except:
+            print(f'[ERROR] conf.py should contain a global variable named "INFO" '
+                  f'(to be printed by this command)')
+
+    return 0
+

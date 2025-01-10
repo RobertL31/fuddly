@@ -218,6 +218,50 @@ class UI(object):
         new_ui._inputs = copy.copy(self._inputs)
         return new_ui
 
+# Generic configuration class
+
+class Conf(object):
+    """
+    Once initialized, attributes cannot be modified
+    """
+    def __init__(self, **kwargs):
+        self._entries = {}
+        for k, v in kwargs.items():
+            self._entries[k] = v
+
+    def merge_with(self, other_conf):
+        self._entries.update(other_conf._entries)
+
+    def __getattr__(self, name):
+        if name in self._entries:
+            return self._entries[name]
+        else:
+            return None
+
+    def __str__(self):
+        if self._entries:
+            conf = '{'
+            space = ''
+            for k, v in self._entries.items():
+                conf += f"{space}{k}={v},\n"
+                if space == '':
+                    space = ' '
+            return conf[:-1]+'}'
+        else:
+            return '{}'
+
+    __repr__ = __str__
+
+    def __bool__(self):
+        return bool(self._entries)
+
+    def __copy__(self):
+        new_conf = type(self)()
+        new_conf.__dict__.update(self.__dict__)
+        new_conf._entries = copy.copy(self._entries)
+        return new_conf
+
+
 
 ### Exports for Node Absorption ###
 
