@@ -35,14 +35,17 @@ def get_projects() -> []:
 get_projects.modules = None
 
 
-def info_template_from_project_name(name) -> str|None:
+def info_from_project_name(name) -> str | None:
     for prj in get_projects():
         prj_name, path, m = prj
         if prj_name == name:
-            info_path = os.path.join(path, "conf.py")
-            if os.path.isfile(info_path):
-                info_mod = m.name + ".conf"
-                return info_mod
+            info = importlib.import_module(m.name)
+            if hasattr(info, "INFO"):
+                return info.INFO
+            else:
+                print(f'[warning] the project "{name}" does not contain a global variable '
+                      f'named "INFO" (to be printed by this command)')
+                return None
     else:
         return None
 
@@ -75,16 +78,9 @@ def start(args: argparse.Namespace) -> int:
             buff = f.read()
             print(buff)
 
-    info_mod = info_template_from_project_name(args.project)
-    if info_mod is None:
-        print(f"{args.project} does not have a conf.py file")
-    else:
-        info_mod = importlib.import_module(info_mod)
-        try:
-            print(info_mod.INFO)
-        except:
-            print(f'[ERROR] conf.py should contain a global variable named "INFO" '
-                  f'(to be printed by this command)')
+    info = info_from_project_name(args.project)
+    if info is not None:
+        print(info)
 
     return 0
 
