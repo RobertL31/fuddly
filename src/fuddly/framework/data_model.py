@@ -373,14 +373,15 @@ class DataModel(object):
         files = {}
 
         # Get from packages (entry_points and fuddly)
-        try:
-            module_path = importlib.resources.files(self.module_name).joinpath("samples")
-            _, _, filenames = next(os.walk(module_path))
-            for f in filenames:
-                files[f]=os.path.join(module_path, f)
-        except StopIteration:
-            # The folder doesn't exist
-            pass
+        if self.module_name is not None:
+            try:
+                module_path = importlib.resources.files(self.module_name).joinpath("samples")
+                _, _, filenames = next(os.walk(module_path))
+                for f in filenames:
+                    files[f]=os.path.join(module_path, f)
+            except StopIteration:
+                # The folder doesn't exist
+                pass
 
         # Imported data from the specified or default path (ususally the fuddly_data_folder)
         # This takes priority over all other files since it arrives last in the list
