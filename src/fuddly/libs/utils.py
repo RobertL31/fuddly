@@ -47,8 +47,8 @@ class Term(object):
         if not os.path.exists(self.pipe_path):
             os.mkfifo(self.pipe_path)
         self.cmd = [term.name]
-        if self.title is not None:
-            self.cmd.extend([term.title_arg, self.title])
+        if self.title is not None and term.title_arg:
+            self.cmd.append(f'{term.title_arg}{self.title}')
         if self.keepterm:
             self.cmd.append(term.hold_arg)
         if term.extra_args:

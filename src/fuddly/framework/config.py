@@ -85,7 +85,7 @@ empty_tg.verbose = False
 [terminal]
 external_term = False
 name=x-terminal-emulator
-title_arg=--title
+title_arg=-p tabtitle=
 hold_arg=--hold
 exec_arg=-e
 exec_arg_type=string
