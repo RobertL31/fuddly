@@ -40,6 +40,7 @@ import signal
 
 from functools import wraps, partial
 from typing import Sequence
+from importlib.util import find_spec
 
 from fuddly.framework.data import Data, DataProcess
 from fuddly.framework.database import FeedbackGate
@@ -263,8 +264,8 @@ def _populate_projects(search_path, prefix="" , projects=None):
             basename=os.path.basename(path.removeprefix(search_path).removeprefix(os.sep))
             if basename != "":
                 if projects.get(key) is None:
-                    projects[key] = []
-                projects[key].append(basename)
+                    projects[key] = (path.removesuffix(basename), [])
+                projects[key][1].append(basename)
                 dirs.clear()
                 continue
         if "__pycache__" in dirs:
@@ -280,8 +281,9 @@ def _populate_projects(search_path, prefix="" , projects=None):
         if len(files) != 0:
             key=os.path.normpath(os.path.join(prefix, rel_path))
             if projects.get(key) is None:
-                projects[key] = []
-            projects[key].extend(files)
+                projects[key] = (None, [])
+            projects[key][1].extend(files)
+
     return projects
 
 class FmkPlumbing(object):
@@ -654,6 +656,8 @@ class FmkPlumbing(object):
         prj_prefix = self.__prj_rld_args_dict[self.prj][0]
         prj_name = self.__prj_rld_args_dict[self.prj][1]
 
+        print(prj_prefix, prj_name)
+
         dm_prefix = self.__dm_rld_args_dict[self.dm][0]
         dm_name = self.__dm_rld_args_dict[self.dm][1]
 
@@ -662,7 +666,7 @@ class FmkPlumbing(object):
         if tg_ids is not None:
             self.load_targets(tg_ids)
 
-        prj_params = self._import_project(prj_prefix, prj_name, reload_prj=True)
+        prj_params = self._import_project(prj_prefix, prj_name, None, reload_prj=True)
         if prj_params is not None:
             self._add_project(
                 prj_params["project"],
@@ -974,12 +978,13 @@ class FmkPlumbing(object):
             _populate_projects(gr.projects_folder, prefix="fuddly/projects", projects=projects)
         _populate_projects(gr.user_projects_folder, prefix="user_projects", projects=projects)
 
-        for dname, file_list in projects.items():
+        for dname, (prj_basepath, file_list) in projects.items():
             if not self._quiet:
                 self.print(colorize(f">>> Look for Projects within '{dname}' Directory", rgb=Color.FMKINFOSUBGROUP))
             prefix = dname.replace(os.sep, ".") + "."
             for name in file_list:
-                prj_params = self._import_project(prefix, name)
+                prj_path = None if prj_basepath is None else os.path.join(prj_basepath, name)
+                prj_params = self._import_project(prefix, name, prj_path)
                 if prj_params is not None:
                     self._add_project(
                         prj_params["project"],
@@ -1005,7 +1010,12 @@ class FmkPlumbing(object):
                 # module_name.submodule.name -> (module_name.submdule., name)
                 *prefix, name = module.module.split(".")
                 prefix = ".".join(prefix)
-                prj_params = self._import_project(prefix + ".", name)
+                m = find_spec(module.module)
+                if os.path.basename(m.origin) == "__init__.py":
+                    prj_path = os.path.dirname(m.origin)
+                else:
+                    prj_path = None
+                prj_params = self._import_project(prefix + ".", name, prj_path)
             except ProjectDuplicateError as e:
                 if not self._quiet:
                     self.print(colorize(f"*** The project '{e.name}' was already defined, "
@@ -1021,7 +1031,7 @@ class FmkPlumbing(object):
             else:
                 self.import_successfull = False
 
-    def _import_project(self, prefix, name, reload_prj=False):
+    def _import_project(self, prefix, name, prj_path, reload_prj=False):
         try: 
             if importlib.util.find_spec(prefix + name) is None:
                 name += "_proj"
@@ -1057,6 +1067,9 @@ class FmkPlumbing(object):
             if not self._quiet:
                 self.print(colorize(f"*** ERROR: '{name}'/'{name}_proj' shall contain a global variable 'project' ***", rgb=Color.ERROR))
             return None
+
+        if prj_path is not None:
+            prj_params["project"].set_fs_path(prj_path)
 
         if prj_params["project"].name is None:
             prj_params["project"].name = name
@@ -1186,7 +1199,7 @@ class FmkPlumbing(object):
 
     def _load_data_model(self):
         try:
-            self.dm.load_data_model(self._name2dm)
+            self.dm.load_data_model(self._name2dm, from_prj=self.prj)
         except:
             msg = ("Error encountered while loading the data model. (checkup the associated" \
                    " '{:s}.py' file)".format(self.dm.name))

@@ -37,7 +37,6 @@ from fuddly.framework.knowledge.feedback_collector import FeedbackSource
 from fuddly.libs.external_modules import *
 from fuddly.libs.utils import chunk_lines
 
-
 def register_adapters_and_converters():
     def adapt_date(val):
         return val.isoformat()
@@ -731,10 +730,13 @@ class Database(object):
             "ORDER BY DATE ASC;".format(data_id=data_id)
         )
 
-        def search_dm(data_model_name, load_arg):
+        from fuddly.libs.fmk_services import get_project_from_name
+
+        def search_dm(data_model_name, load_arg, prj_name):
             for dm in dm_list:
                 if dm.name == data_model_name:
-                    dm.load_data_model(load_arg)
+                    prj_obj = get_project_from_name(prj_name)
+                    dm.load_data_model(load_arg, from_prj=prj_obj)
 
                     def decode_wrapper(*args, **kwargs):
                         return dm.decode(*args, **kwargs)[1]
@@ -753,12 +755,12 @@ class Database(object):
         if decoding_hints is not None:
             load_arg, decode_data, decode_fbk, user_atom_name, user_fbk_atom_name, forced_fbk_decoder = decoding_hints
             if decode_data or decode_fbk:
-                decoder_func = search_dm(dm_name, load_arg)
+                decoder_func = search_dm(dm_name, load_arg, prj)
                 if decoder_func is None:
                     decode_data = False
             if decode_fbk:
                 if forced_fbk_decoder:
-                    fbk_decoder_func = search_dm(forced_fbk_decoder, load_arg)
+                    fbk_decoder_func = search_dm(forced_fbk_decoder, load_arg, prj)
                 else:
                     fbk_decoder_func = decoder_func
                 decode_fbk = fbk_decoder_func is not None

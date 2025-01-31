@@ -21,12 +21,8 @@
 #
 ################################################################################
 
-from __future__ import print_function
-
-try:
-    import queue as queue
-except:
-    import Queue as queue
+import queue as queue
+import collections
 
 from fuddly.framework.monitor import *
 from fuddly.framework.knowledge.feedback_handler import *
@@ -50,7 +46,8 @@ class Project(object):
                  wkspace_enabled=True, wkspace_size=1000, wkspace_free_slot_ratio_when_full=0.5,
                  fmkdb_enabled=True,
                  default_fbk_timeout=None, default_fbk_mode=None,
-                 default_sending_delay=None, default_burst_value=None):
+                 default_sending_delay=None, default_burst_value=None,
+                 samples_subdir='samples'):
         """
 
         Args:
@@ -73,6 +70,7 @@ class Project(object):
             default_burst_value: If not None, when the project will be run, this value will be used
               to initialize the burst value of the framework (number of data that can be sent in burst
               before a delay is applied).
+            samples_subdir: name of the directory from which to retrieve samples.
         """
 
         self.monitor = Monitor()
@@ -102,6 +100,10 @@ class Project(object):
         self.targets = None
         self.dm = None
         self.directors = {}
+
+        self._prj_fs_path = None
+        self._samples_subdir = samples_subdir
+        self._sample_files = None
 
     ################################
     ### Knowledge Infrastructure ###
@@ -255,6 +257,21 @@ class Project(object):
         for fh in self._fbk_handlers:
             fh._stop()
 
+    def set_fs_path(self, prj_path):
+        self._prj_fs_path = prj_path
+
+    def get_sample_files(self, subdir):
+        if self._prj_fs_path is None or self._samples_subdir is None or subdir is None:
+            return None
+
+        self._sample_files = collections.OrderedDict()
+        samples_path = os.path.join(self._prj_fs_path, self._samples_subdir, subdir)
+        if os.path.exists(samples_path):
+            _, _, filenames = next(os.walk(samples_path))
+            for f in filenames:
+                self._sample_files[f] = os.path.join(samples_path, f)
+
+        return self._sample_files
 
     def get_director(self, name):
         try:

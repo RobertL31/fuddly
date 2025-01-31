@@ -272,6 +272,7 @@ class DataModel(object):
         self._decoded_data = None
         self._included_data_models = None
         self._dm_access_lock = threading.Lock()
+        self._current_prj = None
 
     def _backend(self, atom):
         if isinstance(atom, (Node, dict)):
@@ -314,7 +315,7 @@ class DataModel(object):
 
     def get_external_atom(self, dm_name, data_id, name=None):
         dm = self._dm_db[dm_name]
-        dm.load_data_model(self._dm_db)
+        dm.load_data_model(self._dm_db, from_prj=self._current_prj)
         try:
             atom = dm.get_atom(data_id, name=name)
         except ValueError:
@@ -322,14 +323,20 @@ class DataModel(object):
 
         return atom
 
-    def load_data_model(self, dm_db):
+    def load_data_model(self, dm_db, from_prj=None):
+        if from_prj is not None:
+            self._current_prj = from_prj
+
         self.pre_build()
         if not self._built:
             self._dm_db = dm_db
             self.build_data_model()
-            raw_data = self.import_file_contents(extension=self.file_extension)
-            self.register(*list(map(lambda x: x[0], raw_data.values())))
-            self._built = True
+            if self.included_models is None or len(self.included_models) == 1:
+                raw_data = self.import_file_contents(extension=self.file_extension,
+                                                     from_prj=self._current_prj)
+                if raw_data is not None:
+                    self.register(*list(map(lambda x: x[0], raw_data.values())))
+                    self._built = True
 
     def merge_with(self, data_model):
         if self._included_data_models is None:
@@ -360,7 +367,12 @@ class DataModel(object):
             idx += 1
 
     def import_file_contents(self, extension=None, absorber=None,
-                             subdir=None, path=None, filename=None):
+                             subdir=None, path=None, filename=None, from_prj=None):
+
+        assert self.included_models is None or len(self.included_models) == 1
+
+        if subdir is None:
+            subdir = self.name
 
         if absorber is None:
             absorber = self.create_atom_from_raw_data
@@ -389,6 +401,13 @@ class DataModel(object):
         for f in filenames:
             files[f] = os.path.join(path, f)
 
+        # Get samples from project. These samples are considered the most relevant files,
+        # meaning they may replace the ones imported before
+        if from_prj is not None:
+            prj_samples = from_prj.get_sample_files(subdir=subdir)
+            if prj_samples:
+                files.update(prj_samples)
+
         r_file = re.compile(r'.*\.' + extension + '$')
         def is_good_file_by_ext(info):
             return bool(r_file.match(info[0]))
@@ -412,8 +431,6 @@ class DataModel(object):
         return msgs
 
     def get_user_import_directory_path(self, subdir=None):
-        if subdir is None:
-            subdir = self.name
         if subdir is None:
             path = gr.imported_data_folder
         else:

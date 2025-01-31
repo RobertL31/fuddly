@@ -1,4 +1,5 @@
 import os
+import importlib
 from importlib.util import find_spec
 from importlib.metadata import entry_points
 
@@ -11,7 +12,7 @@ def get_each_project_module() -> []:
 
     # Project from user (FS)
     projects = populate_projects(gr.user_projects_folder, prefix="user_projects", projects=None)
-    for dname, file_list in projects.items():
+    for dname, (_, file_list) in projects.items():
         prefix = dname.replace(os.sep, ".") + "."
         for name in file_list:
             m = find_spec(prefix+name)
@@ -34,3 +35,24 @@ def get_each_project_module() -> []:
         project_modules.append(m)
 
     return project_modules
+
+
+def get_project_from_name(name):
+    prj_modules = get_each_project_module()
+    for m in prj_modules:
+        prj_name = m.name.split(".")[-1]
+        if prj_name == name:
+            mod = importlib.import_module(m.name)
+            try:
+                prj_obj = mod.project
+            except AttributeError:
+                print(f'[ERROR] the project "{name}" does not contain a global variable '
+                      f'named "project"')
+                return None
+            else:
+                if os.path.basename(m.origin) == "__init__.py":
+                    prj_path = os.path.dirname(m.origin)
+                else:
+                    prj_path = None
+                prj_obj.set_fs_path(prj_path)
+                return prj_obj
