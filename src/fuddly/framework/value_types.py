@@ -3327,6 +3327,7 @@ class BitField(VT_Alt):
         return blob, off, self.nb_bytes
 
     def update_raw_value(self, val):
+        ok = True
         enc_sz = (val.bit_length() + 7) // 8
         if self.nb_bytes < enc_sz:
             raise ValueError
@@ -3335,6 +3336,8 @@ class BitField(VT_Alt):
         endianess = "big" if self.endian == VT.BigEndian else "little"
         blob = val.to_bytes(self.nb_bytes, endianess)
         self.do_absorb(blob, AbsNoCsts())
+
+        return ok
 
     def do_revert_absorb(self):
         """
