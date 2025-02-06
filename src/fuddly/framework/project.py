@@ -247,7 +247,7 @@ class Project(object):
             self._feedback_processing_thread.start()
 
 
-    def stop(self):
+    def stop(self, before_reload=False):
         if self._fbk_processing_enabled:
             self._run_fbk_handling_thread = False
             if self._feedback_processing_thread:
@@ -255,7 +255,7 @@ class Project(object):
             self._feedback_fifo = None
 
         for fh in self._fbk_handlers:
-            fh._stop()
+            fh._stop(before_reload=before_reload)
 
     def set_fs_path(self, prj_path):
         self._prj_fs_path = prj_path

@@ -661,7 +661,7 @@ class FmkPlumbing(object):
         dm_prefix = self.__dm_rld_args_dict[self.dm][0]
         dm_name = self.__dm_rld_args_dict[self.dm][1]
 
-        self._stop_fmk_plumbing()
+        self._stop_fmk_plumbing(before_reload=True)
 
         if tg_ids is not None:
             self.load_targets(tg_ids)
@@ -700,7 +700,7 @@ class FmkPlumbing(object):
 
         self._start_fmk_plumbing()
         if self.is_not_ok():
-            self._stop_fmk_plumbing()
+            self._stop_fmk_plumbing(before_reload=True)
             return False
 
         if prj_params is not None:
@@ -1315,7 +1315,7 @@ class FmkPlumbing(object):
 
                 self._start()
 
-    def _stop_fmk_plumbing(self):
+    def _stop_fmk_plumbing(self, before_reload=False):
         self.flush_errors()
 
         if self.prj:
@@ -1347,7 +1347,7 @@ class FmkPlumbing(object):
                     self._disable_target()
 
             self.lg.stop()
-            self.prj.stop()
+            self.prj.stop(before_reload=before_reload)
 
             self._stop()
 

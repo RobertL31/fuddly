@@ -141,10 +141,10 @@ class FeedbackHandler(object):
 
         self.start(current_dm)
 
-    def _stop(self):
+    def _stop(self, before_reload=False):
         self._s = None
         if self._new_window and self.term is not None:
-            self.term.stop()
+            self.term.stop(force_kill=True if before_reload else False)
 
         self.stop()
 
