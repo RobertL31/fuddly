@@ -62,9 +62,9 @@ class default:
 
 default = default()
 
-default.add('FmkPlumbing', u'''
+default.add("FmkPlumbing", """
 [global]
-config_name: FmkPlumbing
+config_name = FmkPlumbing
 
 [misc]
 fuzz.delay = 0
@@ -84,39 +84,33 @@ empty_tg.verbose = False
 
 [terminal]
 external_term = False
-name=x-terminal-emulator
-title_arg=-p tabtitle=
-hold_arg=--hold
-exec_arg=-e
-exec_arg_type=string
-extra_args=
+cmd = x-terminal-emulator -p tabtitle={title} -e {cmd}
+hold_arg = --hold
 
-;; [terminal.doc]
-;; self: Configuration applicable to the external terminal
-;; external_term: Use an external terminal
-;; name: Command to call the terminal
-;; title_arg: Option used by the terminal to set the title
-;; hold_arg: Options to keep the terminal open after the commands exits
-;; exec_arg: Option to specify the program to be run by the terminal
-;; exec_arg_type: How the command should be passed on the command line, can be 
-                    string if the command and it's arguments are to be passed as one string or
-                    list if they are to be individual arguments
-;; extra_args: Extra argument to pass on the command line
+;;  [terminal.doc]
+;;  self: Configuration applicable to the external terminal
+;;  external_term: Use an external terminal
+;;  cmd: Command to call the terminal.
+          It will be used as a python format string.
+          {title} will be replaces by the terminal title,
+          {hold} will be replaced with hold_arg if the terminal is to be kept open
+          {cmd} is the command that will be executed in the terminal
+;;  hold_arg: Options to keep the terminal open after the commands exits
 
-''')
+""")
 
-default.add('FmkShell', u'''
+default.add("FmkShell", """
 [global]
-config_name: FmkShell
-prompt: >>
+config_name = FmkShell
+prompt = >>
 
 ;;  [global.doc]
 ;;  prompt: Set the 'Fuddly Shell' prompt
 
 [config]
-middle: 40
-indent.width: 4
-indent.level: 0
+middle = 40
+indent.width = 4
+indent.level = 0
 
 ;;  [config.doc]
 ;;  self: Configuration applicable to the 'config' command
@@ -140,11 +134,11 @@ aligned_options.prompt_height: 3
 ;;  aligned_options.hide_cursor: Attempt to reduce blinking by hiding cursor.
 ;;  aligned_options.prompt_height: Estimation of prompt's height.
 
-''')
+""")
 
-default.add('Database', u'''
+default.add("Database", """
 [global]
-config_name: Database
+config_name = Database
 
 [async_data]
 before_data_id = 5
@@ -158,9 +152,9 @@ after_data_id = 60
       than the amount specified in this parameter.
 ;;  after_data_id: if after the last registered data by the framework, an async data is sent after
       more than the amount of seconds specified in this parameter, it won't be considered to be
-      related to this last registered data. 
+      related to this last registered data.
 
-''')
+""")
 
 
 def check_type(name, attr, value):
@@ -195,14 +189,14 @@ def check_type(name, attr, value):
 
 
 def try_bool(attr, value, name):
-    booleans = [u'True', u'False']
+    booleans = ["True", "False"]
     if attr in booleans:
-        test = (attr == u'True')
+        test = (attr == "True")
     else:
         test = None
     if test is not None:
         if value in booleans:
-            return (test, (value == u'True'))
+            return (test, (value == "True"))
         else:
             raise AttributeError("key '{}' expects a boolean".format(name))
 
@@ -397,7 +391,7 @@ def config_setattr(that, name, value):
     if not isinstance(value, config):
         if isinstance(value, config_dot_proxy):
             raise RuntimeError("'{}' (config_dot_proxy)".format(name) +
-                               ' can not be used as value.')
+                               " can not be used as value.")
 
         if attr is not None:
             value = check_type(name, attr, value)
@@ -429,7 +423,7 @@ def config_setattr(that, name, value):
 
     if not isinstance(attr, config):
         raise AttributeError("unable to replace key '{}'".format(name) +
-                             ' by a section')
+                             " by a section")
 
     attr_parser = sectionize(attr, name)
     for section in attr_parser.sections():
