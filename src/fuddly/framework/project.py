@@ -146,14 +146,17 @@ class Project(object):
         '''
         while self._run_fbk_handling_thread:
             try:
-                fbk_tuple = self._feedback_fifo.get(timeout=0.5)
+                fbk_tuple = self._feedback_fifo.get(timeout=0.1)
             except queue.Empty:
                 continue
 
             for fh in self._fbk_handlers:
-                info = fh.process_feedback(self.dm, *fbk_tuple)
-                if info:
-                    self.knowledge_source.add_information(info)
+                info_set, processed_fbk = fh.process_feedback(self.dm, *fbk_tuple)
+                if info_set:
+                    self.knowledge_source.add_information(info_set)
+                for p_fbk in processed_fbk:
+                    timestamp, content, status_code = p_fbk
+                    self.logger.log_fbkhandler_feedback(fh, content, status_code, timestamp)
 
     def estimate_last_data_impact_uniqueness(self):
         similarity = UNIQUE

@@ -79,6 +79,9 @@ class FeedbackHandler(object):
 
         self.specific_init(**kwargs)
 
+    def __str__(self):
+        return f'{self.__class__.__name__}[{self._new_window_title}]'
+
     def specific_init(self, **kwargs):
         pass
 
@@ -109,7 +112,11 @@ class FeedbackHandler(object):
             status (int): negative status signify an error
 
         Returns:
-            Info: a set of :class:`.information.Info` or only one
+            Info: an :class:`.information.Info` that will be stored in the Information Collector
+              of the project;
+              or a tuple "(timestamp, content, status)" that will be stored as a new feedback
+              (processed from the raw feedback) in the fmkDB;
+              or a list mixing items of the types described above.
         """
         return None
 
@@ -169,6 +176,7 @@ class FeedbackHandler(object):
 
     def process_feedback(self, current_dm, source, timestamp, content, status):
         info_set = set()
+        processed_fbk = []
         truncated_content = None if content is None else content[:60]
 
         DEBUG_PRINT(
@@ -182,11 +190,19 @@ class FeedbackHandler(object):
         if info is not None:
             if isinstance(info, list):
                 for i in info:
-                    info_set.add(i)
+                    if isinstance(i, Info):
+                        info_set.add(i)
+                    else:
+                        assert isinstance(i, tuple) and len(i) == 3
+                        processed_fbk.append(i)
             else:
-                info_set.add(info)
+                if isinstance(info, Info):
+                    info_set.add(info)
+                else:
+                    assert isinstance(info, tuple) and len(info) == 3
+                    processed_fbk.append(info)
 
-        return info_set
+        return info_set, processed_fbk
 
 
 class TestFbkHandler(FeedbackHandler):

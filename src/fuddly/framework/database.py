@@ -517,7 +517,7 @@ class Database(object):
 
 
     def insert_feedback(self, data_id, source, timestamp, content, status_code=None,
-                        store_in_db=True):
+                        store_in_db=True, from_fb_handler=False):
 
         if self.feedback_trail_init_ts is None:
             self.feedback_trail_init_ts = timestamp
@@ -546,7 +546,7 @@ class Database(object):
         self.last_feedback[source].append(fbk_entry)
         self.feedback_trail[source].append(fbk_entry)
 
-        if self.current_project:
+        if self.current_project and not from_fb_handler:
             self.current_project.trigger_feedback_handlers(source, timestamp, content, status_code)
 
         if not self.enabled:

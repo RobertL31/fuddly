@@ -65,7 +65,8 @@ class Term(object):
         self._p = subprocess.Popen(self.cmd)
 
     def stop(self, force_kill=False):
-        if force_kill or (not self.keepterm and self._p is not None and self._p.poll() is None):
+        if ((force_kill and self._p is not None)
+                or (not self.keepterm and self._p is not None and self._p.poll() is None)):
             self._p.kill()
         self._p = None
         try:

@@ -541,7 +541,7 @@ class Logger(object):
             return False
 
     def _log_feedback(self, source, content, status_code, timestamp,
-                      record=True, store_in_db=True):
+                      record=True, store_in_db=True, from_fbk_handler=False):
         processed_feedback = self._process_target_feedback(content)
         fbk_cond = status_code is not None and status_code < 0
         hdr_color = Color.FEEDBACK_ERR if fbk_cond else Color.FEEDBACK
@@ -604,6 +604,7 @@ class Logger(object):
                         self._encode_target_feedback(fbk),
                         status_code=status_code,
                         store_in_db=store_in_db,
+                        from_fb_handler=from_fbk_handler,
                     )
             else:
                 self.fmkDB.insert_feedback(
@@ -613,6 +614,7 @@ class Logger(object):
                     self._encode_target_feedback(content),
                     status_code=status_code,
                     store_in_db=store_in_db,
+                    from_fb_handler=from_fbk_handler,
                 )
 
     def log_collected_feedback(self, preamble=None, epilogue=None,
@@ -673,6 +675,19 @@ class Logger(object):
 
         if epilogue is not None:
             self.log_fn(epilogue, do_record=record, rgb=Color.FMKINFO)
+
+
+    def log_fbkhandler_feedback(self, fbkhandler, content, status_code, timestamp, store_in_db=True):
+        self._log_feedback(
+            FeedbackSource(fbkhandler),
+            content,
+            status_code,
+            timestamp,
+            record=self.shall_record(),
+            store_in_db=store_in_db,
+            from_fbk_handler=True
+        )
+
 
     def log_director_feedback(self, director, content, status_code, timestamp, store_in_db=True):
         self._log_feedback(
