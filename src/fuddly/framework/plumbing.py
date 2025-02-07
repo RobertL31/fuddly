@@ -4383,7 +4383,7 @@ class FmkShell(cmd.Cmd):
             else:
                 dt = self.current_arg
             ret = self._complete_helper_generator_param(dt, text)
-            if self.fz.external_display.is_enabled:
+            if self.fz.external_display.is_enabled and text:
                 param = ret[0]
                 obj = self.generators_params_desc[dt].get(param)
                 if obj:
@@ -4403,7 +4403,7 @@ class FmkShell(cmd.Cmd):
             else:
                 dt = self.current_arg
             ret = self._complete_helper_operator_param(dt, text)
-            if self.fz.external_display.is_enabled:
+            if self.fz.external_display.is_enabled and text:
                 param = ret[0]
                 obj = self.operators_params_desc[dt].get(param)
                 if obj:
