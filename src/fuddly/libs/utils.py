@@ -50,11 +50,12 @@ class Term(object):
         pipe_cmd = f"tail -f {self.pipe_path}"
         self.cmd = shlex.split(
                 term.cmd.format(
-                    title=self.title,
+                    title='"'+self.title+'"',
                     hold=term.hold_arg if self.keepterm else "",
                     cmd=pipe_cmd,
                 )
             )
+        print(self.cmd)
         self._p = None
 
     def _launch_term(self):
