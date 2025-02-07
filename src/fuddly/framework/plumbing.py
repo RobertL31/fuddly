@@ -4960,6 +4960,14 @@ class FmkShell(cmd.Cmd):
         self.fz.show_operators(dmaker_type=dmt)
         return False
 
+    def complete_show_operators(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_with_subparams=[])
+        if self.comp_step == 1:
+            ret = self._complete_helper_operator(text)
+        else:
+            ret = []
+        return ret
+
     def do_show_generators(self, line):
         """
         Show all the generators description or the ones of the
@@ -4979,6 +4987,14 @@ class FmkShell(cmd.Cmd):
 
         self.fz.show_generators(dmaker_type=dmt)
         return False
+
+    def complete_show_generators(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_with_subparams=[])
+        if self.comp_step == 1:
+            ret = self._complete_helper_generator(text)
+        else:
+            ret = []
+        return ret
 
     def do_show_dmaker_types(self, line):
         self.fz.show_data_maker_types()

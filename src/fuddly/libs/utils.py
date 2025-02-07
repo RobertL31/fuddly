@@ -55,7 +55,6 @@ class Term(object):
                     cmd=pipe_cmd,
                 )
             )
-        print(self.cmd)
         self._p = None
 
     def _launch_term(self):
