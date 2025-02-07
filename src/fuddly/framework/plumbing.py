@@ -1391,33 +1391,35 @@ class FmkPlumbing(object):
 
         return detailed_desc
 
+    def _make_target_desc(self, idx, tg):
+        name = self.available_targets_desc[tg]
+        msg = "[{:d}] {:s}".format(idx, name)
+        extensions = tg.extensions
+        if extensions:
+            msg += '\n     \\-- extensions:'
+            for ext in extensions:
+                ext_obj, delay = self._extract_info_from_tg_extensions(ext)
+                ext_name = ext_obj.__name__ if isinstance(ext_obj,
+                                                          type) else ext_obj.__class__.__name__
+                if delay:
+                    msg += " {:s}(refresh={:.2f}s),".format(ext_name, delay)
+                else:
+                    msg += " {:s},".format(ext_name)
+            msg = msg[:-1]
+
+        if idx in self._tg_ids:
+            msg = colorize(FontStyle.BOLD + msg, rgb=Color.SELECTED)
+        else:
+            msg = colorize(msg, rgb=Color.SUBINFO)
+
+        return msg
+
     @EnforceOrder(accepted_states=["25_load_dm", "S1", "S2"])
     def show_targets(self):
         self.print(colorize(FontStyle.BOLD + "\n-=[ Available Targets ]=-\n", rgb=Color.INFO))
-        idx = 0
-        for tg in self.get_available_targets():
-            name = self.available_targets_desc[tg]
-
-            msg = "[{:d}] {:s}".format(idx, name)
-
-            extensions = tg.extensions
-            if extensions:
-                msg += '\n     \\-- extensions:'
-                for ext in extensions:
-                    ext_obj, delay = self._extract_info_from_tg_extensions(ext)
-                    ext_name = ext_obj.__name__ if isinstance(ext_obj, type) else ext_obj.__class__.__name__
-                    if delay:
-                        msg += " {:s}(refresh={:.2f}s),".format(ext_name, delay)
-                    else:
-                        msg += " {:s},".format(ext_name)
-                msg = msg[:-1]
-
-            if idx in self._tg_ids:
-                msg = colorize(FontStyle.BOLD + msg, rgb=Color.SELECTED)
-            else:
-                msg = colorize(msg, rgb=Color.SUBINFO)
+        for idx, tg in enumerate(self.get_available_targets()):
+            msg = self._make_target_desc(idx, tg)
             self.print(msg)
-            idx += 1
 
     @EnforceOrder(accepted_states=["S2"])
     def dynamic_generator_ids(self):
@@ -4000,35 +4002,36 @@ class FmkPlumbing(object):
             chk_list[-1] = (chk_list[-1])[:-1]
         return chk_list
 
+    def _make_str(self, k, v,
+                  prefix1="    |_ ",
+                  prefix2="    |  ",
+                  prefix3="   | "):
+        desc, default, arg_type = v
+        l = self._chunk_lines(desc, 60)
+        k_len = len(k)
+        desc_prefix = "desc: "
+        prefix = '\n' + prefix1 + colorize(k, rgb=Color.INFO_ALT) + \
+                 '\n' + prefix2 + prefix3 + colorize(desc_prefix, rgb=Color.SUBINFO_ALT)
+        msg = prefix
+        indent = 0
+        for chk, cpt in zip(l, range(len(l), 0, -1)):
+            msg += prefix2 * indent + prefix3 * indent + " " * len(desc_prefix) * indent + chk + '\n'
+            indent = 1
+
+        if isinstance(arg_type, tuple):
+            args_type_desc = ""
+            for x in arg_type:
+                args_type_desc += x.__name__ + ", "
+            args_type_desc = args_type_desc[:-2]
+        elif arg_type is None:
+            args_type_desc = "unspecified"
+        else:
+            args_type_desc = arg_type.__name__
+        msg += prefix2 + prefix3 + colorize("default: ", rgb=Color.SUBINFO_ALT) + \
+               colorize(repr(default), rgb=Color.SUBINFO_ALT_HLIGHT) + " [type: {:s}]".format(args_type_desc)
+        return msg
+
     def _dmaker_desc_str(self, obj):
-        def _make_str(k, v):
-            desc, default, arg_type = v
-            l = self._chunk_lines(desc, 60)
-            k_len = len(k)
-            prefix_len = len("\n    |_ ") + 3 - len("desc: ")
-            prefix = "\n    |_ " + colorize(k, rgb=Color.INFO_ALT) + \
-                     "\n    |      | " + colorize("desc: ", rgb=Color.SUBINFO_ALT)
-            msg = prefix
-            indent = 0
-            for chk, cpt in zip(l, range(len(l), 0, -1)):
-                msg += "    |" * indent + " " * prefix_len * indent + \
-                       " |       " * indent + chk + "\n"
-                indent = 1
-
-            if isinstance(arg_type, tuple):
-                args_type_desc = ""
-                for x in arg_type:
-                    args_type_desc += x.__name__ + ", "
-                args_type_desc = args_type_desc[:-2]
-            elif arg_type is None:
-                args_type_desc = "unspecified"
-            else:
-                args_type_desc = arg_type.__name__
-            msg += "    |" + " " * prefix_len + \
-                   " | " + colorize("default: ", rgb=Color.SUBINFO_ALT) + \
-                   colorize(repr(default), rgb=Color.SUBINFO_ALT_HLIGHT) + " [type: {:s}]".format(args_type_desc)
-            return msg
-
         if obj.__doc__:
             msg = "\n" + colorize(obj.__doc__, rgb=Color.INFO_ALT_HLIGHT)
         else:
@@ -4036,7 +4039,7 @@ class FmkPlumbing(object):
         if obj._args_desc:
             msg += "\n  parameters: "
             for k, v in obj._args_desc.items():
-                msg += _make_str(k, v)
+                msg += self._make_str(k, v)
 
         return msg
 
@@ -4199,10 +4202,31 @@ class FmkShell(cmd.Cmd):
 
         atexit.register(save_history)
 
+        self._reset_completion_engine()
+
         signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
+    def _reset_completion_engine(self, full=True):
+        if full:
+            self.projects = list(map(lambda x: x.name, self.fz.prj_list))
+            self.data_models = list(map(lambda x: x.name, self.fz.dm_list))
+            self.targets = None
+            self.generators = None
+            self.operators = None
+            self.data_makers = None
+            self.generators_params = {}
+            self.operators_params = {}
+            self.generators_params_desc = {}
+            self.operators_params_desc = {}
+
+        self.comp_step = 0
+        self.current_arg = None
 
     def postcmd(self, stop, line):
         self.prompt = "\n" + self.config.prompt + " "
+
+        self._reset_completion_engine(full=False)
 
         if self._quit_shell:
             self._quit_shell = False
@@ -4279,6 +4303,150 @@ class FmkShell(cmd.Cmd):
             self.__error = True
             self.__error_msg = "You shall first load a project and/or enable all the framework components!"
             return ""
+
+    def _complete_helper_preambule(self, text, line, begidx, endidx,
+                                   step_without_subparams=None,
+                                   step_with_subparams=None):
+        params = line.split()[1:]
+        if begidx == endidx:
+            pass
+        else:
+            last_param = params[-1]
+            for sep in '([]:,"':
+                if sep in last_param:
+                    break
+            else:
+                try:
+                    params.pop(-1)
+                except IndexError:
+                    print(f'\n*** BUG {self.__class__.__name__} ***')
+
+        self.comp_step = 1
+        for idx, p in enumerate(params, start=1):
+            if ((step_with_subparams is None and step_without_subparams is None)
+                    or (step_without_subparams is not None and idx not in step_without_subparams)
+                    or (step_with_subparams is not None and idx in step_with_subparams)):
+                is_there_open_bracket = '(' in p
+                self.comp_step += 1 if is_there_open_bracket else 2
+                if ')' in p:
+                    self.comp_step += 1
+            else:
+                self.comp_step += 1
+
+        # if self.fz.external_display.is_enabled:
+        #     self.fz.external_display.disp.print_nl(
+        #         f'\n'
+        #         f'***DBG: comp_step: {self.comp_step}, current_arg: {self.current_arg}\n'
+        #         f' | text: {repr(text)}, line: {repr(line)}, begidx: {begidx}, endidx: {endidx}\n')
+
+    def _complete_helper_generator(self, text):
+        return list(filter(lambda x: x.startswith(text), self.generators))
+
+    def _complete_helper_generator_param(self, gen_type, text):
+        return list(filter(lambda x: x.startswith(text), self.generators_params[gen_type]))
+
+    def _complete_helper_operator(self, text):
+        return list(filter(lambda x: x.startswith(text), self.operators))
+
+    def _complete_helper_operator_param(self, op_type, text):
+        return list(filter(lambda x: x.startswith(text), self.operators_params[op_type]))
+
+    def _complete_helper_data_maker(self, text):
+        return list(filter(lambda x: x.startswith(text), self.data_makers))
+
+    def _complete_helper_project(self, text):
+        return list(filter(lambda x: x.startswith(text), self.projects))
+
+    def _complete_helper_target(self, text):
+        ret = list(filter(lambda x: x.startswith(text), list(self.targets.keys())))
+        if self.fz.external_display.is_enabled:
+            self.fz.external_display.disp.print_nl('\n')
+            for tg_id in ret:
+                tg = self.targets.get(tg_id)
+                if tg is not None:
+                    self.fz.external_display.disp.print_nl(
+                        self.fz._make_target_desc(int(tg_id), tg)
+                    )
+        return ret
+
+    def _complete_helper_data_models(self, text):
+        return list(filter(lambda x: x.startswith(text), self.data_models))
+
+    def _complete_helper_gen_and_op(self, text, line, start_completion_index=1):
+        if self.comp_step == start_completion_index:
+            ret = self._complete_helper_generator(text)
+            self.current_arg = ret[0]
+        elif self.comp_step == start_completion_index+1:
+            if self.current_arg == None:
+                dt = line.split()[-1]
+                dt = dt[:dt.index('(')]
+            else:
+                dt = self.current_arg
+            ret = self._complete_helper_generator_param(dt, text)
+            if self.fz.external_display.is_enabled:
+                param = ret[0]
+                obj = self.generators_params_desc[dt].get(param)
+                if obj:
+                    # print(self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | '))
+                    self.fz.external_display.disp.print_nl(
+                        self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | ')
+                    )
+        elif (self.comp_step >= start_completion_index+2
+              and self.comp_step % 2 == start_completion_index % 2):
+            ret = self._complete_helper_operator(text)
+            self.current_arg = ret[0]
+        elif (self.comp_step >= start_completion_index+3
+              and self.comp_step % 2 == (start_completion_index % 2)^1):
+            if self.current_arg == None:
+                dt = line.split()[-1]
+                dt = dt[:dt.index('(')]
+            else:
+                dt = self.current_arg
+            ret = self._complete_helper_operator_param(dt, text)
+            if self.fz.external_display.is_enabled:
+                param = ret[0]
+                obj = self.operators_params_desc[dt].get(param)
+                if obj:
+                    # print(self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | '))
+                    self.fz.external_display.disp.print_nl(
+                        self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | ')
+                    )
+        else:
+            ret = []
+
+        return ret
+
+
+    def _reload_project_data(self):
+        self._reset_completion_engine()
+        self.generators = list(self.fz._generic_tactics.generator_types)
+        self.generators.extend(list(self.fz._tactics.generator_types))
+        self.operators = list(self.fz._generic_tactics.operator_types)
+        self.operators.extend(list(self.fz._tactics.operator_types))
+
+        for tactics in [self.fz._generic_tactics, self.fz._tactics]:
+            for dt in tactics.generator_types:
+                dt_list = tactics.get_generators_list(dt)
+                obj = tactics.get_generator_obj(dt, list(dt_list.keys())[0])
+                self.generators_params[dt] = obj._args_desc.keys()
+                self.generators_params_desc[dt] = {}
+                for p, desc in obj._args_desc.items():
+                    self.generators_params_desc[dt][p] = desc
+
+            for dt in tactics.operator_types:
+                dt_list = tactics.get_operators_list(dt)
+                obj = tactics.get_operator_obj(dt, list(dt_list.keys())[0])
+                self.operators_params[dt] = obj._args_desc.keys()
+                self.operators_params_desc[dt] = {}
+                for p, desc in obj._args_desc.items():
+                    self.operators_params_desc[dt][p] = desc
+
+        self.data_makers = self.generators+self.operators
+
+        self.targets = {}
+        for idx, tg in enumerate(self.fz.get_available_targets()):
+            desc = self.fz.available_targets_desc[tg]
+            self.targets[str(idx)] = tg
 
     def do_switch_term(self, line):
         """Display information on another terminal"""
@@ -4504,6 +4672,17 @@ class FmkShell(cmd.Cmd):
         self.__error = False
         return False
 
+    def complete_load_data_model(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_with_subparams=[])
+
+        if self.comp_step == 1:
+            ret = self._complete_helper_data_models(text)
+        else:
+            ret = []
+
+        return ret
+
+
     def do_load_multiple_data_model(self, line):
         """
         Load a multiple Data Model by name
@@ -4530,6 +4709,16 @@ class FmkShell(cmd.Cmd):
 
         self.__error = False
         return False
+
+    def complete_load_multiple_data_model(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_with_subparams=[])
+
+        if self.comp_step >= 1:
+            ret = self._complete_helper_data_models(text)
+        else:
+            ret = []
+
+        return ret
 
     def do_load_project(self, line):
         """Load an available Project"""
@@ -4604,8 +4793,24 @@ class FmkShell(cmd.Cmd):
         if not self.fz.run_project(prj=prj, tg_ids=tg_ids):
             return False
 
+        self._reload_project_data()
+
         self.__error = False
         return False
+
+    def complete_run_project(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_with_subparams=[])
+
+        if self.comp_step == 1:
+            ret = self._complete_helper_project(text)
+        # elif self.comp_step >= 2:
+        #     # TODO: Not working as targets are not loaded at that time
+        #     ret = self._complete_helper_target(text)
+        else:
+            ret = []
+
+        return ret
+
 
     def do_load_targets(self, line):
         """
@@ -4997,8 +5202,21 @@ class FmkShell(cmd.Cmd):
 
         self.fz.reload_all(tg_ids=tg_ids)
 
+        self._reload_project_data()
+
         self.__error = False
         return False
+
+    def complete_reload_all(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_with_subparams=[])
+
+        if self.comp_step >= 1:
+            ret = self._complete_helper_target(text)
+        else:
+            ret = []
+
+        return ret
+
 
     def do_cleanup_all_dmakers(self, line):
         """
@@ -5043,6 +5261,14 @@ class FmkShell(cmd.Cmd):
         self.__error = False
         return False
 
+    def complete_cleanup_dmaker(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_with_subparams=[])
+        if self.comp_step == 1:
+            ret = self._complete_helper_data_maker(text)
+        else:
+            ret = []
+        return ret
+
     def do_reset_dmaker(self, line):
         """
         Reset a specified initialized Data Maker
@@ -5050,6 +5276,14 @@ class FmkShell(cmd.Cmd):
         |_ syntax: reset_dmaker <dmaker_type> [dmaker_name]
         """
         ret = self.do_cleanup_dmaker(line, reset_existing_seed=True)
+        return ret
+
+    def complete_reset_dmaker(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_with_subparams=[])
+        if self.comp_step == 1:
+            ret = self._complete_helper_data_maker(text)
+        else:
+            ret = []
         return ret
 
     def do_flush_feedback(self, line):
@@ -5098,6 +5332,10 @@ class FmkShell(cmd.Cmd):
                                                       verbose=verbose) is None)
         return False
 
+    def complete_send(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx)
+        return self._complete_helper_gen_and_op(text, line, start_completion_index=1)
+
     def do_send_verbose(self, line):
         """
         Carry out multiple fuzzing steps in sequence (pretty print enabled)
@@ -5105,6 +5343,10 @@ class FmkShell(cmd.Cmd):
         """
         ret = self.do_send(line, verbose=True)
         return ret
+
+    def complete_send_verbose(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx)
+        return self._complete_helper_gen_and_op(text, line, start_completion_index=1)
 
     def do_send_loop(self, line, use_existing_seed=False, verbose=False):
         """
@@ -5152,16 +5394,29 @@ class FmkShell(cmd.Cmd):
 
         return False
 
+    def complete_send_loop(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_without_subparams=[1])
+        if self.comp_step == 1:
+            ret = list(map(lambda x: str(x), range(2, 10)))
+            ret.insert(0, str(-1))
+        else:
+            ret = self._complete_helper_gen_and_op(text, line, start_completion_index=2)
+
+        return ret
+
     def do_send_loop_verbose(self, line):
         """
         Execute the 'send' command in a loop and save the seed
-        |_ syntax: send_loopv <#loop> <generator_type> [operator_type_1 ... operator_type_n]  [targetID1 ... targetIDN]
+        |_ syntax: send_loop_verbose <#loop> <generator_type> [operator_type_1 ... operator_type_n]  [targetID1 ... targetIDN]
 
         Notes:
             - To loop indefinitely use -1 for #loop. To stop the loop use Ctrl+C
         """
         ret = self.do_send_loop(line, use_existing_seed=True, verbose=True)
         return ret
+
+    def complete_send_loop_verbose(self, text, line, begidx, endidx):
+        return self.complete_send_loop(text, line, begidx, endidx)
 
     def do_send_with(self, line):
         """
