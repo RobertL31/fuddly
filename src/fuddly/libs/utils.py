@@ -46,19 +46,15 @@ class Term(object):
         self.pipe_path = os.sep + os.path.join('tmp', 'fuddly_term_' + str(uuid.uuid4()))
         if not os.path.exists(self.pipe_path):
             os.mkfifo(self.pipe_path)
-        self.cmd = [term.name]
-        if self.title is not None and term.title_arg:
-            self.cmd.append(f'{term.title_arg}{self.title}')
-        if self.keepterm:
-            self.cmd.append(term.hold_arg)
-        if term.extra_args:
-            self.cmd.extend(shlex.split(term.extra_args))
-        if term.exec_arg:
-            self.cmd.append(term.exec_arg)
-        if term.exec_arg_type == "list":
-            self.cmd.extend(['tail', '-f', self.pipe_path])
-        elif term.exec_arg_type == "string":
-            self.cmd.append(f"tail -f {self.pipe_path}")
+
+        pipe_cmd = f"tail -f {self.pipe_path}"
+        self.cmd = shlex.split(
+                term.cmd.format(
+                    title=self.title,
+                    hold=term.hold_arg if self.keepterm else "",
+                    cmd=pipe_cmd,
+                )
+            )
         self._p = None
 
     def _launch_term(self):
