@@ -38,10 +38,9 @@ import os
 import re
 import sys
 
-try:
-    import configparser
-except BaseException:
-    import ConfigParser as configparser
+import configparser
+
+from fuddly.framework.global_resources import config_folder
 
 reserved = {'config_name', 'parser', 'help', 'write', 'global'}
 verbose = False
@@ -107,6 +106,18 @@ prompt = >>
 ;;  [global.doc]
 ;;  prompt: Set the 'Fuddly Shell' prompt
 
+[completion]
+offline_doc = True
+inline_doc = False
+
+;;  [completion.doc]
+;;  offline_doc: When set to True, parameters documentation for Generators and Operators are
+                  are displayed on the external terminal if it is enabled (either via with
+                  the config parameter 'external_term' set to True in 'FmkPlumbing.ini',
+                  or by launching the fuddly shell with the option '--external-display').
+;;  inline_doc: When set to True, parameters documentation for Generators and Operators are
+                 displayed inline.
+
 [config]
 middle = 40
 indent.width = 4
@@ -120,10 +131,10 @@ indent.level = 0
                     used to display the helpers.
 
 [send_loop]
-aligned: False
-aligned_options.batch_mode: False
-aligned_options.hide_cursor: True
-aligned_options.prompt_height: 3
+aligned = False
+aligned_options.batch_mode = False
+aligned_options.hide_cursor = True
+aligned_options.prompt_height = 3
 
 ;;  [send_loop.doc]
 ;;  self: Configuration applicable to the 'send_loop' command.
@@ -156,6 +167,16 @@ after_data_id = 60
 
 """)
 
+def update_config(from_whom, old_config):
+    error_msg = (f"\n[WARNING] Old version detected for '{old_config.config_name}.ini' (renamed)."
+                 f" New version is about to be installed.\n")
+    current_fn = os.path.join(config_folder, old_config.config_name + ".ini")
+    new_fn = current_fn + '_old'
+    os.rename(current_fn, new_fn)
+    new_config = config(from_whom, path=[config_folder])
+    with open(current_fn, "w") as cfile:
+        new_config.write(cfile)
+    return new_config, error_msg
 
 def check_type(name, attr, value):
     original = value

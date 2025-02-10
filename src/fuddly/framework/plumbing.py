@@ -55,7 +55,7 @@ from fuddly.framework.scenario import *
 from fuddly.framework.tactics_helpers import *
 from fuddly.framework.target_helpers import *
 from fuddly.framework.cosmetics import aligned_stdout
-from fuddly.framework.config import config, config_dot_proxy
+from fuddly.framework.config import config, config_dot_proxy, update_config
 from fuddly.libs.utils import *
 
 from fuddly.framework import generic_data_makers
@@ -381,6 +381,14 @@ class FmkPlumbing(object):
 
         self.config = config(self, path=[config_folder])
 
+        error_msg = None
+        try:
+            # detect old versions of configuration files and update them
+            term = self.config.terminal
+            _ = term.cmd
+        except AttributeError:
+            self.config, error_msg = update_config(from_whom=self, old_config=self.config)
+
         external_term = self.config.terminal.external_term
         if external_term and not self.external_display.is_enabled:
             self.switch_term()
@@ -432,6 +440,10 @@ class FmkPlumbing(object):
                                 rgb=Color.FMKSUBINFO))
             self.print(colorize(" --> config folder: {:s}".format(gr.config_folder),
                                 rgb=Color.FMKINFO))
+
+            if error_msg:
+                self.print(colorize(error_msg, rgb=Color.WARNING))
+
 
     def switch_term(self):
         if not self.external_display.is_enabled:
@@ -4184,6 +4196,15 @@ class FmkShell(cmd.Cmd):
         atexit.register(save_config)
 
         self.prompt = "\n" + self.config.prompt + " "
+        try:
+            self._inline_doc = self.config.completion.inline_doc
+            self._offline_doc = self.config.completion.offline_doc
+        except AttributeError:
+            self.config, error_msg = update_config(from_whom=self, old_config=self.config)
+            self.print(colorize(error_msg, rgb=Color.WARNING))
+            self.available_configs['shell'] = self.config
+            self._inline_doc = self.config.completion.inline_doc
+            self._offline_doc = self.config.completion.offline_doc
 
         self.__error = False
         self.__error_msg = ""
@@ -4260,7 +4281,8 @@ class FmkShell(cmd.Cmd):
         if self.__error:
             self.__error = False
             if self.__error_msg != "":
-                self.print(colorize("    (_ SHELL: {:s} _)".format(self.__error_msg), rgb=Color.WARNING)
+                self.print(
+                    colorize("    (_ SHELL: {:s} _)".format(self.__error_msg), rgb=Color.WARNING)
                 )
 
         if printed_err:
@@ -4383,14 +4405,16 @@ class FmkShell(cmd.Cmd):
             else:
                 dt = self.current_arg
             ret = self._complete_helper_generator_param(dt, text)
-            if self.fz.external_display.is_enabled and text:
+            if (self._inline_doc or self._offline_doc) and text:
                 param = ret[0]
                 obj = self.generators_params_desc[dt].get(param)
                 if obj:
-                    # print(self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | '))
-                    self.fz.external_display.disp.print_nl(
-                        self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | ')
-                    )
+                    if self._inline_doc:
+                        print(self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | '))
+                    if self._offline_doc and self.fz.external_display.is_enabled:
+                        self.fz.external_display.disp.print_nl(
+                            self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | ')
+                        )
         elif (self.comp_step >= start_completion_index+2
               and self.comp_step % 2 == start_completion_index % 2):
             ret = self._complete_helper_operator(text)
@@ -4403,14 +4427,16 @@ class FmkShell(cmd.Cmd):
             else:
                 dt = self.current_arg
             ret = self._complete_helper_operator_param(dt, text)
-            if self.fz.external_display.is_enabled and text:
+            if (self._inline_doc or self._offline_doc) and text:
                 param = ret[0]
                 obj = self.operators_params_desc[dt].get(param)
                 if obj:
-                    # print(self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | '))
-                    self.fz.external_display.disp.print_nl(
-                        self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | ')
-                    )
+                    if self._inline_doc:
+                        print(self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | '))
+                    if self._offline_doc and self.fz.external_display.is_enabled:
+                        self.fz.external_display.disp.print_nl(
+                            self.fz._make_str(param, obj, prefix1='', prefix2='', prefix3='  | ')
+                        )
         else:
             ret = []
 
