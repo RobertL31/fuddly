@@ -668,8 +668,6 @@ class FmkPlumbing(object):
         prj_prefix = self.__prj_rld_args_dict[self.prj][0]
         prj_name = self.__prj_rld_args_dict[self.prj][1]
 
-        print(prj_prefix, prj_name)
-
         dm_prefix = self.__dm_rld_args_dict[self.dm][0]
         dm_name = self.__dm_rld_args_dict[self.dm][1]
 
@@ -5219,6 +5217,8 @@ class FmkShell(cmd.Cmd):
         |_ syntax: reload_data_model
         """
         self.fz.reload_dm()
+
+        self._reload_project_data()
 
         return False
 

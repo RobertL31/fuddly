@@ -136,6 +136,7 @@ class MH(object):
         Abs_Postpone = NodeInternals.Abs_Postpone
 
         Separator = NodeInternals.Separator
+        AutoSeparator = NodeInternals.AutoSeparator
 
         Highlight = NodeInternals.Highlight
 
