@@ -371,7 +371,7 @@ class CSP(object):
 
                 try:
                     z3formula = eval(c.relation)
-                except z3types.Z3Exception:
+                except (z3types.Z3Exception, AttributeError):
                     # this case can happen if some variable types have been changed by a operator
                     # to generate specific test cases. (For instance tTYPE will change a vt.INT into
                     # a vt.String to add specific cases mixing integers and separators.)
