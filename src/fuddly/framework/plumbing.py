@@ -4327,7 +4327,9 @@ class FmkShell(cmd.Cmd):
     def _complete_helper_preambule(self, text, line, begidx, endidx,
                                    step_without_subparams=None,
                                    step_with_subparams=None):
-        params = line.split()[1:]
+        params = line[:endidx].split()[1:]
+        if len(line) > endidx:
+            self.current_arg = None
         if begidx == endidx:
             pass
         else:
@@ -4392,13 +4394,13 @@ class FmkShell(cmd.Cmd):
     def _complete_helper_data_models(self, text):
         return list(filter(lambda x: x.startswith(text), self.data_models))
 
-    def _complete_helper_gen_and_op(self, text, line, start_completion_index=1):
+    def _complete_helper_gen_and_op(self, text, line, begidx, endidx, start_completion_index=1):
         if self.comp_step == start_completion_index:
             ret = self._complete_helper_generator(text)
             self.current_arg = ret[0]
         elif self.comp_step == start_completion_index+1:
             if self.current_arg == None:
-                dt = line.split()[-1]
+                dt = line[:endidx].split()[-1]
                 dt = dt[:dt.index('(')]
             else:
                 dt = self.current_arg
@@ -4420,7 +4422,7 @@ class FmkShell(cmd.Cmd):
         elif (self.comp_step >= start_completion_index+3
               and self.comp_step % 2 == (start_completion_index % 2)^1):
             if self.current_arg == None:
-                dt = line.split()[-1]
+                dt = line[:endidx].split()[-1]
                 dt = dt[:dt.index('(')]
             else:
                 dt = self.current_arg
@@ -5376,7 +5378,7 @@ class FmkShell(cmd.Cmd):
 
     def complete_send(self, text, line, begidx, endidx):
         self._complete_helper_preambule(text, line, begidx, endidx)
-        return self._complete_helper_gen_and_op(text, line, start_completion_index=1)
+        return self._complete_helper_gen_and_op(text, line, begidx, endidx, start_completion_index=1)
 
     def do_send_verbose(self, line):
         """
@@ -5388,7 +5390,7 @@ class FmkShell(cmd.Cmd):
 
     def complete_send_verbose(self, text, line, begidx, endidx):
         self._complete_helper_preambule(text, line, begidx, endidx)
-        return self._complete_helper_gen_and_op(text, line, start_completion_index=1)
+        return self._complete_helper_gen_and_op(text, line, begidx, endidx, start_completion_index=1)
 
     def do_send_loop(self, line, use_existing_seed=False, verbose=False):
         """
@@ -5442,7 +5444,7 @@ class FmkShell(cmd.Cmd):
             ret = list(map(lambda x: str(x), range(2, 10)))
             ret.insert(0, str(-1))
         else:
-            ret = self._complete_helper_gen_and_op(text, line, start_completion_index=2)
+            ret = self._complete_helper_gen_and_op(text, line, begidx, endidx, start_completion_index=2)
 
         return ret
 
