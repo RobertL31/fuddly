@@ -4805,6 +4805,8 @@ class NodeInternals_NonTerm(NodeInternals):
             or (after is None and before is None and idx is None)
         )
 
+        node.set_env(self.env)
+
         self.subnodes_set.add(node)
         self.subnodes_attrs[node] = NodeInternals_NonTerm.NodeAttrs()
         self.subnodes_attrs[node].default_qty = default_qty
