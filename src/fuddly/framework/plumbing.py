@@ -4364,6 +4364,9 @@ class FmkShell(cmd.Cmd):
     def _complete_helper_generator(self, text):
         return list(filter(lambda x: x.startswith(text), self.generators))
 
+    def _complete_helper_scenario(self, text):
+        return list(filter(lambda x: x.startswith('SC_'+text[3:]), self.generators))
+
     def _complete_helper_generator_param(self, gen_type, text):
         return list(filter(lambda x: x.startswith(text), self.generators_params[gen_type]))
 
@@ -5951,6 +5954,15 @@ class FmkShell(cmd.Cmd):
 
         self.__error = False
         return False
+
+    def complete_show_scenario(self, text, line, begidx, endidx):
+        self._complete_helper_preambule(text, line, begidx, endidx, step_with_subparams=[])
+        if self.comp_step == 1:
+            ret = self._complete_helper_scenario(text)
+        else:
+            ret = []
+        return ret
+
 
     def do_replay_last(self, line):
         """
