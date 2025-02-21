@@ -67,7 +67,7 @@ class ModelWalker(object):
             assert not make_determinist
             self._root_node.make_random(all_conf=True, recursive=True)
 
-        self._root_node.freeze(resolve_csp=True)
+        self._root_node.freeze()
 
         self._max_steps = int(max_steps)
         self._initial_step = int(initial_step)
