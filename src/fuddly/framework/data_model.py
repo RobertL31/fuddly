@@ -262,7 +262,8 @@ class DataModel(object):
     def cleanup(self):
         pass
 
-    def __init__(self):
+    def __init__(self, samples_subdir='samples'):
+        self._samples_subdir = samples_subdir
         self.node_backend = NodeBackend(self)
         self._dm_db = None
         self._built = False
@@ -273,6 +274,7 @@ class DataModel(object):
         self._included_data_models = None
         self._dm_access_lock = threading.Lock()
         self._current_prj = None
+        self._dm_fs_path = None
 
     def _backend(self, atom):
         if isinstance(atom, (Node, dict)):
@@ -315,7 +317,7 @@ class DataModel(object):
 
     def get_external_atom(self, dm_name, data_id, name=None):
         dm = self._dm_db[dm_name]
-        dm.load_data_model(self._dm_db, from_prj=self._current_prj)
+        dm.load_data_model(self._dm_db, from_prj=self._current_prj, from_dm=self)
         try:
             atom = dm.get_atom(data_id, name=name)
         except ValueError:
@@ -323,7 +325,7 @@ class DataModel(object):
 
         return atom
 
-    def load_data_model(self, dm_db, from_prj=None):
+    def load_data_model(self, dm_db, from_prj=None, from_dm=None):
         if from_prj is not None:
             self._current_prj = from_prj
 
@@ -333,7 +335,8 @@ class DataModel(object):
             self.build_data_model()
             if self.included_models is None or len(self.included_models) == 1:
                 raw_data = self.import_file_contents(extension=self.file_extension,
-                                                     from_prj=self._current_prj)
+                                                     from_prj=self._current_prj,
+                                                     from_dm=from_dm)
                 if raw_data is not None:
                     self.register(*list(map(lambda x: x[0], raw_data.values())))
                     self._built = True
@@ -366,8 +369,28 @@ class DataModel(object):
             print(colorize('[%d] ' % idx + data_key, rgb=Color.SUBINFO))
             idx += 1
 
+    def set_fs_path(self, dm_path):
+        self._dm_fs_path = dm_path
+
+    def get_fs_path(self):
+        return self._dm_fs_path
+
+    def get_sample_files(self, subdir):
+        if self._dm_fs_path is None or self._samples_subdir is None or subdir is None:
+            return None
+
+        self._sample_files = collections.OrderedDict()
+        samples_path = os.path.join(self._dm_fs_path, self._samples_subdir)
+        if os.path.exists(samples_path):
+            _, _, filenames = next(os.walk(samples_path))
+            for f in filenames:
+                self._sample_files[f] = os.path.join(samples_path, f)
+
+        return self._sample_files
+
+
     def import_file_contents(self, extension=None, absorber=None,
-                             subdir=None, path=None, filename=None, from_prj=None):
+                             subdir=None, path=None, filename=None, from_prj=None, from_dm=None):
 
         assert self.included_models is None or len(self.included_models) == 1
 
@@ -394,6 +417,12 @@ class DataModel(object):
             except StopIteration:
                 # The folder doesn't exist
                 pass
+
+        dm_origin = self if from_dm is None else from_dm
+        # Get samples from the current data model in the FS.
+        dm_samples = dm_origin.get_sample_files(subdir=subdir)
+        if dm_samples:
+            files.update(dm_samples)
 
         # Imported data from the specified or default path (ususally the fuddly_data_folder)
         # This takes priority over all other files since it arrives last in the list

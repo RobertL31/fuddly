@@ -617,10 +617,11 @@ class FmkPlumbing(object):
                 self.set_error("Error encountered while reloading the composed Data Model")
 
         else:
+            dm_path = self.dm.get_fs_path()
             self._cleanup_all_dmakers()
             self.dm.cleanup()
 
-            dm_params = self._import_dm(prefix, name, reload_dm=True)
+            dm_params = self._import_dm(prefix, name, dm_path, reload_dm=True)
             if dm_params is not None:
                 if self.dm in self.__dynamic_generator_ids:
                     del self.__dynamic_generator_ids[self.dm]
@@ -671,12 +672,14 @@ class FmkPlumbing(object):
         dm_prefix = self.__dm_rld_args_dict[self.dm][0]
         dm_name = self.__dm_rld_args_dict[self.dm][1]
 
+        prj_path = self.prj._prj_fs_path
+
         self._stop_fmk_plumbing(before_reload=True)
 
         if tg_ids is not None:
             self.load_targets(tg_ids)
 
-        prj_params = self._import_project(prj_prefix, prj_name, None, reload_prj=True)
+        prj_params = self._import_project(prj_prefix, prj_name, prj_path, reload_prj=True)
         if prj_params is not None:
             self._add_project(
                 prj_params["project"],
@@ -697,7 +700,8 @@ class FmkPlumbing(object):
                 self._reload_dm()
                 self._init_fmk_internals_step1(prj_params["project"], self.dm)
             else:
-                dm_params = self._import_dm(dm_prefix, dm_name, reload_dm=True)
+                dm_path = self.dm.get_fs_path()
+                dm_params = self._import_dm(dm_prefix, dm_name, dm_path, reload_dm=True)
                 if dm_params is not None:
                     self._add_data_model(
                         dm_params["dm"],
@@ -833,6 +837,7 @@ class FmkPlumbing(object):
                     key=prefix+relpath
                     if data_models.get(key) is None:
                         data_models[key] = []
+                    # print(f'***DBG {key} {basename(m)}')
                     data_models[key].append(basename(m))
 
         if gr.is_running_from_fs:
@@ -847,7 +852,8 @@ class FmkPlumbing(object):
                                     rgb=Color.FMKINFOSUBGROUP))
             prefix = dname.replace(os.sep, ".") + "."
             for name in names:
-                dm_params = self._import_dm(prefix, name)
+                dm_abspath = os.path.join(gr.fuddly_data_folder, dname, name)
+                dm_params = self._import_dm(prefix, name, dm_abspath)
                 if dm_params is None:
                     self.import_successfull = False
                     continue
@@ -869,7 +875,12 @@ class FmkPlumbing(object):
             try:
                 *prefix, name = module.module.split(".")
                 prefix = ".".join(prefix)
-                dm_params = self._import_dm(prefix + ".", name)
+                m = find_spec(module.module)
+                if os.path.basename(m.origin) == "__init__.py":
+                    dm_path = os.path.dirname(m.origin)
+                else:
+                    dm_path = None
+                dm_params = self._import_dm(prefix + ".", name, dm_path)
             except DataModelDuplicateError as e:
                 if not self._quiet:
                     self.print(colorize(f"*** The data model '{e.name}' was already defined, "
@@ -888,7 +899,7 @@ class FmkPlumbing(object):
                 # populate FMK DB
                 self._fmkDB_insert_dm_and_dmakers(dm_params["dm"].name, dm_params["tactics"])
 
-    def _import_dm(self, prefix, name, reload_dm=False):
+    def _import_dm(self, prefix, name, dm_path, reload_dm=False):
         try:
             module = importlib.import_module(prefix + name)
             if reload_dm:
@@ -916,6 +927,9 @@ class FmkPlumbing(object):
                 self.print(colorize(f"*** ERROR: '{name}' shall contain a global variable 'data_model' ***",
                                     rgb=Color.ERROR))
             return None
+
+        if dm_path is not None:
+            dm_params["dm"].set_fs_path(dm_path)
 
         try:
             dm_params["tactics"] = module.strategy.tactics

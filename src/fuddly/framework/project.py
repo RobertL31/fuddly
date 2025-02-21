@@ -263,6 +263,9 @@ class Project(object):
     def set_fs_path(self, prj_path):
         self._prj_fs_path = prj_path
 
+    def get_fs_path(self):
+        return self._prj_fs_path
+
     def get_sample_files(self, subdir):
         if self._prj_fs_path is None or self._samples_subdir is None or subdir is None:
             return None
