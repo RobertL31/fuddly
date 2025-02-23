@@ -505,6 +505,10 @@ import_from
 data_id
   Name of the data description to import.
 
+samples_from_current_dm
+  In the case the imported data model leverages sample files (like the data model ``json``),
+  instruct whether to use the samples from the imported data model or to use instead samples
+  from the current data model. (Set to ``False`` by default.)
 
 .. _dm:node_prop_keywords:
 

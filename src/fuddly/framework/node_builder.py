@@ -67,7 +67,7 @@ class NodeBuilder(object):
         # Recursive Node description keys
         'default_node',
         # Import description keys
-        'import_from', 'data_id',
+        'import_from', 'data_id', 'samples_from_current_dm',
         # Node properties description keys
         'determinist', 'random', 'finite', 'infinite', 'mutable',
         'clear_attrs', 'set_attrs',
@@ -243,7 +243,9 @@ class NodeBuilder(object):
             assert self.dm is not None, "NodeBuilder should be initialized with the current data model!"
             data_id = desc.get('data_id', None)
             assert data_id is not None, "Missing field: 'data_id' (to be used with 'import_from' field)"
-            nd = self.dm.get_external_atom(dm_name=exp, data_id=data_id, name=name)
+            samples_from_current_dm = desc.get('samples_from_current_dm', False)
+            nd = self.dm.get_external_atom(dm_name=exp, data_id=data_id, name=name,
+                                           samples_from_current_dm=samples_from_current_dm)
             assert nd is not None, "The requested data ID '{:s}' does not exist!".format(data_id)
             self.node_dico[(name, ident)] = nd
             return nd

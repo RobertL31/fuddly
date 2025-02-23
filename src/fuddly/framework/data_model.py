@@ -315,9 +315,11 @@ class DataModel(object):
         else:
             raise ValueError('Requested atom does not exist!')
 
-    def get_external_atom(self, dm_name, data_id, name=None):
+    def get_external_atom(self, dm_name, data_id, name=None, samples_from_current_dm=False):
         dm = self._dm_db[dm_name]
-        dm.load_data_model(self._dm_db, from_prj=self._current_prj, from_dm=self)
+        samples_from = self if samples_from_current_dm else None
+        dm.load_data_model(self._dm_db, from_prj=self._current_prj, from_dm=samples_from,
+                           force_import_samples=True)
         try:
             atom = dm.get_atom(data_id, name=name)
         except ValueError:
@@ -325,7 +327,7 @@ class DataModel(object):
 
         return atom
 
-    def load_data_model(self, dm_db, from_prj=None, from_dm=None):
+    def load_data_model(self, dm_db, from_prj=None, from_dm=None, force_import_samples=False):
         if from_prj is not None:
             self._current_prj = from_prj
 
@@ -333,13 +335,16 @@ class DataModel(object):
         if not self._built:
             self._dm_db = dm_db
             self.build_data_model()
+
+        if not self._built or force_import_samples:
             if self.included_models is None or len(self.included_models) == 1:
                 raw_data = self.import_file_contents(extension=self.file_extension,
                                                      from_prj=self._current_prj,
                                                      from_dm=from_dm)
                 if raw_data is not None:
                     self.register(*list(map(lambda x: x[0], raw_data.values())))
-                    self._built = True
+
+            self._built = True
 
     def merge_with(self, data_model):
         if self._included_data_models is None:
@@ -407,10 +412,11 @@ class DataModel(object):
 
         files = {}
 
+        dm_origin = self if from_dm is None else from_dm
         # Get from packages (entry_points and fuddly)
-        if self.module_name is not None:
+        if dm_origin.module_name is not None:
             try:
-                module_path = importlib.resources.files(self.module_name).joinpath("samples")
+                module_path = importlib.resources.files(dm_origin.module_name).joinpath("samples")
                 _, _, filenames = next(os.walk(module_path))
                 for f in filenames:
                     files[f]=os.path.join(module_path, f)
@@ -418,7 +424,6 @@ class DataModel(object):
                 # The folder doesn't exist
                 pass
 
-        dm_origin = self if from_dm is None else from_dm
         # Get samples from the current data model in the FS.
         dm_samples = dm_origin.get_sample_files(subdir=subdir)
         if dm_samples:
@@ -448,8 +453,8 @@ class DataModel(object):
             files = list(filter(is_good_file_by_ext, files.items()))
         else:
             files = list(filter(is_good_file_by_fname, files.items()))
-        msgs = {}
 
+        msgs = {}
         for (idx, (name, filepath)) in enumerate(files):
             with open(filepath, 'rb') as f:
                 buff = f.read()
