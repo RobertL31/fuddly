@@ -58,7 +58,7 @@ class Term(object):
         self._p = None
 
     def _launch_term(self):
-        self._p = subprocess.Popen(self.cmd)
+        self._p = subprocess.Popen(self.cmd, start_new_session=True)
 
     def stop(self, force_kill=False):
         if ((force_kill and self._p is not None)
@@ -76,8 +76,15 @@ class Term(object):
         s += "\n" if newline else ""
         if self._p is None or self._p.poll() is not None:
             self._launch_term()
-        with open(self.pipe_path, "w") as input_desc:
-            input_desc.write(s)
+        try:
+            with open(self.pipe_path, "w") as input_desc:
+                input_desc.write(s)
+        except BrokenPipeError as err:
+            print(f'\n*** [Warning] {err} intercepted, recreate the named pipe '
+                  f'and relaunch the reader command ***')
+            self.stop(force_kill=True)
+            self.start()
+            self.print(s, newline=newline)
 
     def print_nl(self, s):
         self.print(s, newline=True)
