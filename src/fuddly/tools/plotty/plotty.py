@@ -56,12 +56,18 @@ def get_points(
     
     points_coordinates = []
     for entry in data:
-        instanciation = \
-        {
-            (column_names[i] if column_names[i] != PlottyGlobals.async_data_id_column_name else PlottyGlobals.data_id_column_name)
-            : entry[i] for i in range(len(column_names))
-        }
-        points_coordinates.append(PlottyOptions.formula.evaluate(instanciation))
+        instanciation = {}
+        for i in range(len(column_names)):
+            if entry[i] is None:
+                print(entry)
+                break
+            if column_names[i] != PlottyGlobals.async_data_id_column_name:
+                key = column_names[i]
+            else:
+                key = PlottyGlobals.data_id_column_name
+            instanciation[key] = entry[i]
+        else:
+            points_coordinates.append(PlottyOptions.formula.evaluate(instanciation))
 
     annotations = None
     if annotation_column_names is not None and len(annotation_column_names) != 0:
