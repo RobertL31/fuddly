@@ -407,9 +407,9 @@ class Step(object):
     @content.setter
     def content(self, atom_list):
         if isinstance(atom_list, list):
-            self._data_desc = [Data(a) for a in atom_list]
+            self.data_desc = [Data(a) for a in atom_list]
         if isinstance(atom_list, Node):
-            self._data_desc = [Data(atom_list)]
+            self.data_desc = Data(atom_list)
         else:
             raise ValueError
 
