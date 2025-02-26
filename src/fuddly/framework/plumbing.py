@@ -2402,10 +2402,11 @@ class FmkPlumbing(object):
         self._cleanup_tasks()
 
     @EnforceOrder(accepted_states=["S2"])
-    def process_data_and_send( self, data_desc=None, id_from_fmkdb=None, id_from_db=None,
+    def process_data_and_send(self, data_desc=None, id_from_fmkdb=None, id_from_db=None,
                               max_loop=1, tg_ids=None,
                               verbose=False, console_display=True,
-                              save_generator_seed=False):
+                              save_generator_seed=False,
+                              reset_dmakers=False):
         """
         Send data to the selected targets. These data can follow a specific processing before
         being emitted. The latter depends on what is provided in `data_desc`.
@@ -2427,6 +2428,7 @@ class FmkPlumbing(object):
             save_generator_seed: If random Generators are used, the generated data will be internally saved
               and will be reused next time this generator will be called, until
               FmkPlumbing.cleanup_dmaker(... reset_existing_seed=True) is called on this Generator.
+            reset_dmakers: If `True`, the Generators and Operators will be reset before being used
 
         Returns:
             The list of data that have been sent. `None` if nothing was sent due to some error.
@@ -2462,7 +2464,8 @@ class FmkPlumbing(object):
                 data_list = []
                 for d_desc in data_desc:
                     data = self.handle_data_desc(d_desc, resolve_dataprocess=True,
-                                                 save_generator_seed=save_generator_seed)
+                                                 save_generator_seed=save_generator_seed,
+                                                 reset_dmakers=reset_dmakers)
                     if data is None:
                         data = Data()
                         data.make_unusable()
@@ -3448,7 +3451,8 @@ class FmkPlumbing(object):
             self._handle_user_code_exception(f"Validation tests has crashed on current data model {self.dm.name}")
 
     @EnforceOrder(accepted_states=["S2"])
-    def process_data(self, action_list, seed=None, valid_gen=False, save_gen_seed=False, reset_dmakers=False):
+    def process_data(self, action_list, seed=None, valid_gen=False, save_gen_seed=False,
+                     reset_dmakers=False):
         """
 
         Args:
@@ -3599,6 +3603,15 @@ class FmkPlumbing(object):
                 if not reset_dmakers and \
                         (dmaker_obj in self.__initialized_dmakers and self.__initialized_dmakers[dmaker_obj][0]):
                     ui = self.__initialized_dmakers[dmaker_obj][1]
+                    if ui is not None and ui != user_input:
+                        self.set_error(f"Detection of different user inputs provided for the data "
+                                       f"maker '{dmaker_obj.__class__.__name__}' than "
+                                       f"the ones already set. Take them into account.",
+                                       code=Error.FmkWarning)
+                        self.cleanup_dmaker(dmaker_obj=dmaker_obj)
+                        self.__initialized_dmakers[dmaker_obj] = (
+                            self.__initialized_dmakers[dmaker_obj][0], user_input)
+                        ui = user_input
                 else:
                     if action_list_sz == 1 and isinstance(dmaker_obj, DynGenerator):
                         ui = UI(freeze=True) if user_input is None else user_input.merge_with(UI(freeze=True))
@@ -3658,6 +3671,14 @@ class FmkPlumbing(object):
             try:
                 if dmaker_obj not in self.__initialized_dmakers:
                     self.__initialized_dmakers[dmaker_obj] = (False, None)
+                else:
+                    ui = self.__initialized_dmakers[dmaker_obj][1]
+                    if ui is not None and ui != user_input:
+                        self.set_error(f"Detection of different user inputs provided for the data "
+                                       f"maker '{dmaker_obj.__class__.__name__}' than "
+                                       f"the ones already set. Take them into account.",
+                                       code=Error.FmkWarning)
+                        self.cleanup_dmaker(dmaker_obj=dmaker_obj)
 
                 if reset_dmakers or not self.__initialized_dmakers[dmaker_obj][0]:
                     initialized = dmaker_obj._setup(self.dm, user_input)
@@ -4211,12 +4232,14 @@ class FmkShell(cmd.Cmd):
         try:
             self._inline_doc = self.config.completion.inline_doc
             self._offline_doc = self.config.completion.offline_doc
+            self._reset_dmakers_mode = self.config.send.reset_dmakers
         except AttributeError:
             self.config, error_msg = update_config(from_whom=self, old_config=self.config)
             self.print(colorize(error_msg, rgb=Color.WARNING))
             self.available_configs['shell'] = self.config
             self._inline_doc = self.config.completion.inline_doc
             self._offline_doc = self.config.completion.offline_doc
+            self._reset_dmakers_mode = self.config.send.reset_dmakers
 
         self.__error = False
         self.__error_msg = ""
@@ -4274,6 +4297,8 @@ class FmkShell(cmd.Cmd):
                 return True
             else:
                 return False
+
+        time.sleep(0.05)
 
         printed_err = False
         self.print("")
@@ -4890,6 +4915,14 @@ class FmkShell(cmd.Cmd):
         """Show the framework internals"""
         self.fz.show_fmk_internals()
 
+        self.print(colorize("\n  [ Shell Specific Information ]", rgb=Color.INFO))
+        self.print(colorize(
+            f"        Reset mode for send* commands enabled: ", rgb=Color.SUBINFO)
+                   + repr(self._reset_dmakers_mode)
+                   + colorize(f"\n          (can be changed through the switch_send_mode command) ",
+                              rgb=Color.FMKSUBINFO))
+
+
         return False
 
     def do_show_knowledge(self, line):
@@ -5389,8 +5422,10 @@ class FmkShell(cmd.Cmd):
             self.__error_msg = "Syntax Error!"
             return False
 
-        self.__error = (self.fz.process_data_and_send(DataProcess(actions, tg_ids=tg_ids),
-                                                      verbose=verbose) is None)
+        self.__error = (
+                self.fz.process_data_and_send(
+                    DataProcess(actions, tg_ids=tg_ids),
+                    verbose=verbose, reset_dmakers=self._reset_dmakers_mode) is None)
         return False
 
     def complete_send(self, text, line, begidx, endidx):
@@ -5501,7 +5536,8 @@ class FmkShell(cmd.Cmd):
         actions = [((t[0], args[1]), t[1])]
 
         self.__error = (
-            self.fz.process_data_and_send(DataProcess(actions, tg_ids=tg_ids)) is None
+            self.fz.process_data_and_send(DataProcess(actions, tg_ids=tg_ids),
+                                          reset_dmakers=self._reset_dmakers_mode) is None
         )
         return False
 
@@ -5677,7 +5713,7 @@ class FmkShell(cmd.Cmd):
         """
         Switch target feedback mode between:
           - wait for the full time slot allocated for feedback retrieval
-          - wait until the target has send something back to us
+          - wait until the target has sent something back to us
 
         Syntax: switch_feedback_mode <TargetID>
         """
@@ -5698,6 +5734,32 @@ class FmkShell(cmd.Cmd):
 
         self.__error = False
         return False
+
+    def do_switch_send_mode(self, line):
+        """
+        Switch the behavior of the send commands (and derivatives) between:
+          - use the current state of the data makers to process the command
+          - reset generators and operators involved in the command before processing it (and
+            thus take into account any change of data maker parameters)
+
+        Only affects the commands: send, send_verbose, send_with.
+        It is related to the configuration parameter 'dmakers_reset' within FmkShell.ini
+
+        Syntax: switch_send_mode
+        """
+        self.__error = True
+
+        args = line.split()
+        args_len = len(args)
+
+        if args_len != 0:
+            return False
+
+        self._reset_dmakers_mode = not self._reset_dmakers_mode
+
+        self.__error = False
+        return False
+
 
     def do_set_health_check_timeout(self, line):
         """

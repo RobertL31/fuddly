@@ -145,6 +145,21 @@ aligned_options.prompt_height = 3
 ;;  aligned_options.hide_cursor: Attempt to reduce blinking by hiding cursor.
 ;;  aligned_options.prompt_height: Estimation of prompt's height.
 
+[send]
+reset_dmakers = False
+
+;;  [send.doc]
+;;  self: Configuration applicable to the 'send' command and all derivatives
+          (excluding the loop versions).
+;;
+;;  reset_dmakers: When this property is False, the data makers (Generator and Operators) involved
+       in the send* commands will keep their state. Thus, when using again the same command (or the
+       data makers involved) their state will evolve based on their previous state.
+       Thus, if their is a change in the parameters provided, they won't be taken into account.
+       When this property is set to True, the data makers involved in the send* commands will be
+       reset before being used.  
+
+
 """)
 
 default.add("Database", """

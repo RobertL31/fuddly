@@ -212,6 +212,9 @@ class UI(object):
 
     __repr__ = __str__
 
+    def __eq__(self, other):
+        return self._inputs == other._inputs if other is not None else False
+
     def __copy__(self):
         new_ui = type(self)()
         new_ui.__dict__.update(self.__dict__)
