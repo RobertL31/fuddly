@@ -33,9 +33,9 @@ What's still missing
 --------------------
 + Refer to TODO file
 
-About documentation
--------------------
-+ Documentation is available `here`_.
+About the Documentation
+-----------------------
++ The documentation is available `here`_.
 + In order to generate the documentation from the source, follow these steps:
 
   #. go to the folder ``docs/``
@@ -45,8 +45,31 @@ About documentation
 
 .. _here: http://fuddly.readthedocs.io
 
+Basic Installation Instructions
+-------------------------------
 
-Launch fuddly test cases
+Installation with `pipenv`::
+
+    $ cd <path_to_fuddly>
+    $ pipenv install   # or pipenv sync (if you want to match exactly the environment
+                       # described in fuddly Pipfile.lock)
+    $ pipenv shell
+
+Refer to the documentation for more information
+
+Launch fuddly shell
+-------------------
+
+- If `fuddly` is installed either through pip/pipenv or a package from your distribution::
+
+    $ fuddly shell
+
+- If `fuddly` is not installed::
+
+    $ python -m fuddly.cli shell
+
+
+Launch fuddly Test Cases
 ------------------------
 
 The package ``test`` include all unit & integration test cases
@@ -54,26 +77,17 @@ of ``fuddly`` itself. From the ``src/`` directory, usage is as follows:
 
 - To launch all the tests, issue the command::
 
-    >> python -m fuddly.test -a
+    $ python -m fuddly.test -a
 
 - To launch all the tests but the longer ones, issue the command::
 
-    >> python -m fuddly.test
+    $ python -m fuddly.test
 
 - To avoid data model specific test cases use the option ``--ignore-dm-specifics``
 
 - To launch a specific test category issue the following command::
 
-    >> python -m fuddly.test fuddly.test.<test_package>.<test_module>.<Test_Class>.<test_method>
-
-
-Miscellaneous
--------------
-+ Don't forget to populate ``<fuddly data folder>/imported_data/`` with sample files for data
-  models that need it
-
-+ Note that when the fuddly shell is launched, the path of the fuddly data folder is displayed as
-  well as its configuration folder
+    $ python -m fuddly.test fuddly.test.<test_package>.<test_module>.<Test_Class>.<test_method>
 
 Dependencies
 ------------

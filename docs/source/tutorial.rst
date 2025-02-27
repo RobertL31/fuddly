@@ -8,15 +8,64 @@ steps to create a new data model and the way to define specific
 operators.
 
 
+Installing ``fuddly`` with ``pipenv``
+=====================================
+
+After having retrieved fuddly from `Github <https://github.com/k0retux/fuddly.git>`_, Let's
+install `pipenv` (if you don't have it yet):
+
+.. code-block:: none
+   :linenos:
+
+    $ pip install --user pipenv
+
+Then, issue the following commands:
+
+.. code-block:: none
+   :linenos:
+
+    $ cd <path_to_fuddly>
+    $ pipenv install   # or pipenv sync (if you want to match exactly the environment
+                       # described in fuddly Pipfile.lock)
+    $ pipenv shell
+
+You will then be running within a fuddly ``venv`` which has been setup by ``pipenv``.
+At this point you can issue the following command to enter the `fuddly` shell:
+
+.. code-block:: none
+   :linenos:
+
+    $ fuddly shell
+
+.. note::
+   Some completion files are provided in `fuddly` repository for various shells
+   (bash, fish, zsh). They are located at ``<path to fuddly>/shell_completions/``.
+
+.. note::
+   If you want to get a `pipenv shell` from wherever you are, you can add the following script in your
+   `PATH`:
+
+   .. code-block:: none
+      :linenos:
+
+       #!/bin/sh
+
+       export PIPENV_PIPFILE="<path to fuddly>/Pipfile"
+       pipenv shell
+
+
+Refer to :ref:`tuto:cli` for more information on `fuddly` CLI.
+
+
 Using ``fuddly`` simple UI: ``Fuddly Shell``
 ============================================
 
 A simple UI---called Fuddly Shell---allows to interact with ``fuddly`` in
 an easy way. In this tutorial we present the usual commands that can
-be used during a fuzzing session. But first we have to launch it by
-running the ``<root of fuddly>/fuddly_shell.py`` script. (Or just 
-``fuddly_shell`` in the terminal if fuddly has been installed through a 
-package manager)
+be used during a fuddly session. But first, we have to launch it by
+running the command ``python -m fuddly.cli shell`` in your favorite shell.
+Alternatively, if you installed it either through pip/pipenv or a package from your distribution,
+you can run it with the command ``fuddly shell``.
 
 .. note::
    This script basically does the following:
@@ -33,8 +82,8 @@ package manager)
 
 .. _tuto:start-fuzzshell:
 
-Start a Fuzzing Session
------------------------
+Start a Fuddly Session
+----------------------
 
 After running this script you should be prompted with something like
 this:
