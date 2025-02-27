@@ -1888,22 +1888,26 @@ class FmkPlumbing(object):
 
         elif timeout >= 0:
             if tg_id is None:
+                fbk_timeout_changed = False
                 for tg in self.targets.values():
-                    tg.set_feedback_timeout(timeout)
-                self._recompute_generic_timeouts(timeout, max_sending_delay, do_show=do_show)
-                if do_show or do_record:
-                    self.lg.log_fmk_info("Target(s) feedback timeout = {:.1f}s".format(timeout),
-                                         do_record=do_record)
+                    if tg.set_feedback_timeout(timeout):
+                        fbk_timeout_changed = True
+                if fbk_timeout_changed:
+                    self._recompute_generic_timeouts(timeout, max_sending_delay, do_show=do_show)
+                    if do_show or do_record:
+                        self.lg.log_fmk_info("Target(s) feedback timeout = {:.1f}s".format(timeout),
+                                             do_record=do_record)
             else:
                 tg = self.targets[tg_id]
-                tg.set_feedback_timeout(timeout)
-                self._recompute_generic_timeouts(
-                    timeout, tg.sending_delay, target=tg, do_show=do_show
-                )
-                if do_show or do_record:
-                    tg_desc = self._get_detailed_target_desc(tg)
-                    self.lg.log_fmk_info("Target {!s} feedback timeout = {:.1f}s".format(tg_desc, timeout),
-                                         do_record=do_record)
+                fbk_timeout_changed = tg.set_feedback_timeout(timeout)
+                if fbk_timeout_changed:
+                    self._recompute_generic_timeouts(
+                        timeout, tg.sending_delay, target=tg, do_show=do_show
+                    )
+                    if do_show or do_record:
+                        tg_desc = self._get_detailed_target_desc(tg)
+                        self.lg.log_fmk_info("Target {!s} feedback timeout = {:.1f}s".format(tg_desc, timeout),
+                                             do_record=do_record)
             return True
         else:
             self.lg.log_fmk_info("Wrong timeout value!", do_record=False)
@@ -3604,8 +3608,8 @@ class FmkPlumbing(object):
                         (dmaker_obj in self.__initialized_dmakers and self.__initialized_dmakers[dmaker_obj][0]):
                     ui = self.__initialized_dmakers[dmaker_obj][1]
                     if ui is not None and ui != user_input:
-                        self.set_error(f"Detection of different user inputs provided for the data "
-                                       f"maker '{dmaker_obj.__class__.__name__}' than "
+                        self.set_error(f"Detection of different user inputs provided for the "
+                                       f"generator '{dmaker_obj.__class__.__name__}' than "
                                        f"the ones already set. Take them into account.",
                                        code=Error.FmkWarning)
                         self.cleanup_dmaker(dmaker_obj=dmaker_obj)
